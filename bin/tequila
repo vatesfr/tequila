@@ -3,10 +3,11 @@
 
 require dirname(__FILE__).'/../libs/gallic/lib/Gallic.php';
 
-Gallic::$include_dirs[] = defined('__DIR__') ? __DIR__ : dirname(__FILE__);
-
 ////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * This is Tequila's main class (obviously).
+ */
 class Tequila
 {
 	// If we want to set these properties private, we should use the “__get” and
@@ -21,37 +22,19 @@ class Tequila
 		$this->_user = $user_info['name'];
 	}
 
-	public function execute($class, $method, $arguments = null)
+	public function __get($name)
 	{
-		if (!(class_exists($class, false)
-		      || Gallic_Loader::loadClass($class, $this->include_dirs)))
+		switch ($name)
 		{
-			throw new Tequila_NoSuchClass($class);
+		case 'history':
+			return $this->_history;
 		}
-
-		$object = new $class();
-
-		if (!method_exists($object, $method))
-		{
-			throw new Tequila_NoSuchMethod($method);
-		}
-
-		$arguments = (array) $arguments;
-
-		$info = new ReflectionMethod($class, $method);
-
-		// Do not count the first parameter which is the user.
-		$n = $info->getNumberOfRequiredParameters() - 1;
-
-		if (count($arguments) < $n)
-		{
-			throw new Tequila_NotEnoughArgument($class, $method, $n);
-		}
-
-		return call_user_func_array(array($object, $method),
-		                            array_merge(array($this->_user), $arguments));
 	}
 
+
+	/**
+	 * Starts the interpreter's loop (prompt → parse → execute).
+	 */
 	public function start()
 	{
 		$this->_is_running = true;
@@ -66,14 +49,18 @@ class Tequila
 				return;
 			}
 
+			$string = rtrim($string, "\n");
+
 			// TODO: handle multi-line parsing.
 			$entries = Tequila_Parser::parseString($string);
 
-			$n = count($entries);
-			if ($n === 0)
+			if (($entries === false) || (($n = count($entries)) === 0))
 			{
 				continue;
 			}
+
+			$this->_history[] = $string;
+
 			if ($n === 1)
 			{
 				$this->writeln('Missing method', STDERR);
@@ -94,6 +81,10 @@ class Tequila
 					$this->writeln($this->messages["null_value"]);
 				}
 			}
+			catch (Tequila_Exception $e)
+			{
+				$this->writeln($e->getMessage(), STDERR);
+			}
 			catch (Exception $e)
 			{
 				$this->writeln(get_class($e).': '.$e->getMessage(), STDERR);
@@ -101,35 +92,171 @@ class Tequila
 		} while ($this->_is_running);
 	}
 
+	/**
+	 * Stops the interpreter's loop.
+	 */
 	public function stop()
 	{
 		$this->_is_running = false;
 	}
 
+	////////////////////////////////////////
+	// Tools.
+
+	/**
+	 * Returns an array containing all the available methods of $class.
+	 *
+	 * Available methods are public and do not start with a “_”.
+	 */
+	public function getAvailableMethods($class)
+	{
+		$methods = array();
+
+		foreach ($class->getMethods(ReflectionMethod::IS_PUBLIC) as $method)
+		{
+			$name = $method->getName();
+			if ($name[0] !== '_')
+			{
+				$methods[] = $name;
+			}
+		}
+
+		return $methods;
+	}
+
+	/**
+	 * Returns   a  ReflectionClass   instance  describing   the   class  called
+	 * $class_name.
+	 *
+	 * If the class is undefined, this method will try to load it.
+	 *
+	 * @throws Tequila_NoSuchClass If the class could not be found.
+	 */
+	public function getClass($class_name)
+	{
+		if (!(class_exists($class_name, false)
+		      || (Gallic_Loader::loadClass($class_name, $this->include_dirs)
+		          && class_exists($class_name, false))))
+		{
+			throw new Tequila_NoSuchClass($class_name);
+		}
+
+		return $class = new ReflectionClass($class_name);
+	}
+
+	/**
+	 * Returns  a   ReflectionMethod  instance  describing   the  method  called
+	 * $method_name of the class $class.
+	 *
+	 * @throws Tequila_NoSuchMethod If the method could not be found.
+	 */
+	public function getMethod(ReflectionClass $class, $method_name)
+	{
+		try
+		{
+			return $class->getMethod($method_name);
+		}
+		catch (ReflectionException $e)
+		{
+			throw new Tequila_NoSuchMethod($class->getName(), $method_name);
+		}
+	}
+
+	/**
+	 * Instanciates  an  object of  the  class  $class_name  and calls  the  its
+	 * $method_name method with  the name of the current  user and $arguments as
+	 * arguments.
+	 *
+	 * @throws Tequila_NoSuchClass If the class could not be found.
+	 * @throws Tequila_NoSuchMethod If the method could not be found.
+	 * @throws  Tequila_NotEnoughArgument If the  method expects  more arguments
+	 *                                    than those provided.
+	 *
+	 * @return The return value of the method.
+	 */
+	public function execute($class_name, $method_name, $arguments = null)
+	{
+		$class  = $this->getClass($class_name);
+		$method = $this->getMethod($class, $method_name);
+
+		$arguments = (array) $arguments;
+
+		// Do not count the first parameter which is the user.
+		$n = $method->getNumberOfRequiredParameters() - 1;
+		if (count($arguments) < $n)
+		{
+			throw new Tequila_NotEnoughArgument($class_name, $method_name, $n);
+		}
+
+		if ($class->isSubclassOf('Tequila_Module'))
+		{
+			$object = $class->newInstance($this);
+		}
+		else
+		{
+			$object = $class->newInstance();
+		}
+
+		array_unshift($arguments, $this->_user);
+
+		return $method->invokeArgs($object, $arguments);
+	}
+
+	/**
+	 * Reads a single ligne from the specified $file_handle.
+	 *
+	 * @return The line read or false if an error occured.
+	 */
 	public function readln($file_handle = STDIN)
 	{
 		return fgets($file_handle);
 	}
 
+	/**
+	 * Writes a string to the specified $file_handle.
+	 */
 	public function write($message = '', $file_handle = STDOUT)
 	{
 		fwrite($file_handle, $message);
 	}
 
+	/**
+	 * Writes a string followed by a new line to the specified $file_handle.
+	 */
 	public function writeln($message = '', $file_handle = STDOUT)
 	{
 		$this->write($message.PHP_EOL);
 	}
 
 	private
+		$_history    = array(),
 		$_hooks      = array(),
 		$_is_running = false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * An instance of this class is able to split a string into multiple words.
+ *
+ * A word  is delimited by whitespaces  unless the whitespaces  are escaped with
+ * the “\” character or the part containing whitespace is quoted.
+ *
+ * All of the following are considered as words:
+ * - word_without_space
+ * - word\ with\ spaces\ escaped
+ * - "quoted word"
+ * - "quoted word containg a \" "
+ * - more" "complex\ word" with special \\ and \""
+ *
+ * The parser is able to parse multiple strings in the same session.
+ */
 final class Tequila_Parser
 {
+	/**
+	 * Helper which returns an array of every words in the string if the parsing
+	 * is complete otherwise false.
+	 */
 	public static function parseString($string)
 	{
 		$parser = new self();
@@ -160,12 +287,8 @@ final class Tequila_Parser
 	/**
 	 * Parses a string into an array of words.
 	 *
-	 * Words are delimited by spaces or new lines.
-	 *
-	 * A word can contain delimiters if the portion of the string is quoted with
-	 * “"”.
-	 *
-	 * Any character can be treated literally if escaped with “\”.
+	 * If the parsing is incomplete, the  user can call this function again with
+	 * another string which will complete it.
 	 *
 	 * @return Whether the parsing is complete, i.e. quoted strings are properly
 	 *         closed.
@@ -229,6 +352,10 @@ final class Tequila_Parser
 		return true;
 	}
 
+	/**
+	 * Resets the  internal state  of the  parser, i.e. to  start a  new parsing
+	 * session.
+	 */
 	public function reset()
 	{
 		$this->_escaped = false;
@@ -245,6 +372,9 @@ final class Tequila_Parser
 		$_word,
 		$_words;
 
+	/**
+	 * If the current word is meaningful adds it to the list of words.
+	 */
 	private function _push_word()
 	{
 		if ($this->_in_word || ($this->_word !== ''))
@@ -259,27 +389,54 @@ final class Tequila_Parser
 
 ////////////////////////////////////////////////////////////////////////////////
 
-final class Tequila_NoSuchClass extends Exception
+/**
+ * This is the base class for Tequila modules.
+ */
+class Tequila_Module
 {
-	public function __construct($class)
+	public function __construct($tequila)
 	{
-		parent::__construct('No such class: '.$class);
+		$this->_tequila = $tequila;
+	}
+
+	protected $_tequila;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * This is the base class for every exceptions raised by Tequila.
+ */
+class Tequila_Exception extends Exception
+{
+	public function __construct($message)
+	{
+		parent::__construct($message);
 	}
 }
 
-final class Tequila_NoSuchMethod extends Exception
+final class Tequila_NoSuchClass extends Tequila_Exception
 {
-	public function __construct($method)
+	public function __construct($class_name)
 	{
-		parent::__construct('No such method: '.$method);
+		parent::__construct('No such class: '.$class_name);
 	}
 }
 
-final class Tequila_NotEnoughArgument extends Exception
+final class Tequila_NoSuchMethod extends Tequila_Exception
 {
-	public function __construct($class, $method, $n)
+	public function __construct($class_name, $method_name)
 	{
-		parent::__construct($class.'::'.$method.' expects at least '.$n.' arguments');
+		parent::__construct('No such method: '.$class_name.'::'.$method_name);
+	}
+}
+
+final class Tequila_NotEnoughArgument extends Tequila_Exception
+{
+	public function __construct($class_name, $method_name, $n)
+	{
+		parent::__construct($class_name.'::'.$method_name.' expects at least '
+		                    .$n.' arguments');
 	}
 }
 

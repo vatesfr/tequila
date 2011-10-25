@@ -37,7 +37,11 @@ final class Gallic_Path
 
 	public static function join()
 	{
-		return implode(DIRECTORY_SEPARATOR, func_get_args());
+		// Prior  to PHP  5.3, func_get_args()  cannot  be used  directly as  an
+		// argument.
+		$args = func_get_args();
+
+		return implode(DIRECTORY_SEPARATOR, $args);
 	}
 
 
