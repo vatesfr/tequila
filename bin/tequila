@@ -1,0 +1,300 @@
+#!/usr/bin/env php
+<?php
+
+require dirname(__FILE__).'/../libs/gallic/lib/Gallic.php';
+
+Gallic::$include_dirs[] = defined('__DIR__') ? __DIR__ : dirname(__FILE__);
+
+////////////////////////////////////////////////////////////////////////////////
+
+class Tequila
+{
+	// If we want to set these properties private, we should use the “__get” and
+	// “__set” magic methods to keep API compatibility.
+	public
+		$prompt = 'tequila> ',
+		$include_dirs = array();
+
+	public function __construct()
+	{
+		$user_info = posix_getpwuid(posix_getuid());
+		$this->_user = $user_info['name'];
+	}
+
+	public function execute($class, $method, $arguments = null)
+	{
+		if (!(class_exists($class, false)
+		      || Gallic_Loader::loadClass($class, $this->include_dirs)))
+		{
+			throw new Tequila_NoSuchClass($class);
+		}
+
+		$object = new $class();
+
+		if (!method_exists($object, $method))
+		{
+			throw new Tequila_NoSuchMethod($method);
+		}
+
+		$arguments = (array) $arguments;
+
+		$info = new ReflectionMethod($class, $method);
+
+		// Do not count the first parameter which is the user.
+		$n = $info->getNumberOfRequiredParameters() - 1;
+
+		if (count($arguments) < $n)
+		{
+			throw new Tequila_NotEnoughArgument($class, $method, $n);
+		}
+
+		return call_user_func_array(array($object, $method),
+		                            array_merge(array($this->_user), $arguments));
+	}
+
+	public function start()
+	{
+		$this->_is_running = true;
+
+		do {
+			$this->write($this->prompt);
+
+			$string = $this->readln();
+			if ($string === false)
+			{
+				$this->stop();
+				return;
+			}
+
+			// TODO: handle multi-line parsing.
+			$entries = Tequila_Parser::parseString($string);
+
+			$n = count($entries);
+			if ($n === 0)
+			{
+				continue;
+			}
+			if ($n === 1)
+			{
+				$this->writeln('Missing method', STDERR);
+				continue;
+			}
+
+			try
+			{
+				$result = $this->execute($entries[0], $entries[1],
+				                         array_slice($entries, 2));
+
+				if ($result !== null)
+				{
+					$this->writeln($result);
+				}
+				elseif (isset($this->messages["null_value"]))
+				{
+					$this->writeln($this->messages["null_value"]);
+				}
+			}
+			catch (Exception $e)
+			{
+				$this->writeln(get_class($e).': '.$e->getMessage(), STDERR);
+			}
+		} while ($this->_is_running);
+	}
+
+	public function stop()
+	{
+		$this->_is_running = false;
+	}
+
+	public function readln($file_handle = STDIN)
+	{
+		return fgets($file_handle);
+	}
+
+	public function write($message = '', $file_handle = STDOUT)
+	{
+		fwrite($file_handle, $message);
+	}
+
+	public function writeln($message = '', $file_handle = STDOUT)
+	{
+		$this->write($message.PHP_EOL);
+	}
+
+	private
+		$_hooks      = array(),
+		$_is_running = false;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+final class Tequila_Parser
+{
+	public static function parseString($string)
+	{
+		$parser = new self();
+
+		if ($parser->parse($string) === false)
+		{
+			return false;
+		}
+
+		return $parser->words;
+	}
+
+	public function __construct()
+	{
+		$this->reset();
+	}
+
+	public function __get($name)
+	{
+		switch ($name)
+		{
+		case 'words':
+			$name = '_'.$name;
+			return $this->$name;
+		}
+	}
+
+	/**
+	 * Parses a string into an array of words.
+	 *
+	 * Words are delimited by spaces or new lines.
+	 *
+	 * A word can contain delimiters if the portion of the string is quoted with
+	 * “"”.
+	 *
+	 * Any character can be treated literally if escaped with “\”.
+	 *
+	 * @return Whether the parsing is complete, i.e. quoted strings are properly
+	 *         closed.
+	 */
+	public function parse($string)
+	{
+		foreach (str_split($string) as $letter)
+		{
+			if ($this->_escaped)
+			{
+				$this->_escaped = false;
+				$this->_word .= $letter;
+				continue;
+			}
+
+			if ($letter === '\\')
+			{
+				$this->_escaped = true;
+				continue;
+			}
+
+			if ($this->_quoted)
+			{
+				if ($letter === '"')
+				{
+					$this->_quoted = false;
+
+					// Even if the current word is empty, it is meaningful.
+					$this->_in_word = true;
+				}
+				else
+				{
+					$this->_word .= $letter;
+				}
+				continue;
+			}
+
+			if ($letter === '"')
+			{
+				$this->_quoted = true;
+				continue;
+			}
+
+			if (($letter === ' ') || ($letter === "\n"))
+			{
+				$this->_push_word();
+			}
+			else
+			{
+				$this->_word .= $letter;
+			}
+		}
+
+		if ($this->_escaped || $this->_quoted)
+		{
+			return false;
+		}
+
+		$this->_push_word();
+
+		return true;
+	}
+
+	public function reset()
+	{
+		$this->_escaped = false;
+		$this->_quoted  = false;
+		$this->_in_word = false;
+		$this->_word    = '';
+		$this->_words   = array();
+	}
+
+	private
+		$_escaped,
+		$_quoted,
+		$_in_word,
+		$_word,
+		$_words;
+
+	private function _push_word()
+	{
+		if ($this->_in_word || ($this->_word !== ''))
+		{
+			$this->_words[] = $this->_word;
+			$this->_word = '';
+
+			$this->_in_word = false;
+		}
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+final class Tequila_NoSuchClass extends Exception
+{
+	public function __construct($class)
+	{
+		parent::__construct('No such class: '.$class);
+	}
+}
+
+final class Tequila_NoSuchMethod extends Exception
+{
+	public function __construct($method)
+	{
+		parent::__construct('No such method: '.$method);
+	}
+}
+
+final class Tequila_NotEnoughArgument extends Exception
+{
+	public function __construct($class, $method, $n)
+	{
+		parent::__construct($class.'::'.$method.' expects at least '.$n.' arguments');
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+$tequila = new Tequila();
+
+$config = parse_ini_file(dirname(__FILE__).'/../tequila.ini');
+if (isset($config['prompt']))
+{
+	$tequila->prompt = $config['prompt'];
+}
+if (isset($config['include_dirs']))
+{
+	$tequila->include_dirs = (array) $config['include_dirs'];
+}
+
+$tequila->start();

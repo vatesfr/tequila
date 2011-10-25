@@ -1,0 +1,3 @@
+- logging
+- multi-line parsing
+- print a message when the result of a method is null.
