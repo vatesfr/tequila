@@ -108,7 +108,7 @@ class Tequila
 	 *
 	 * Available methods are public and do not start with a “_”.
 	 */
-	public function getAvailableMethods($class)
+	public function getAvailableMethods(ReflectionClass $class)
 	{
 		$methods = array();
 
@@ -174,7 +174,7 @@ class Tequila
 	 *
 	 * @return The return value of the method.
 	 */
-	public function execute($class_name, $method_name, $arguments = null)
+	public function execute($class_name, $method_name, array $arguments = null)
 	{
 		$class  = $this->getClass($class_name);
 		$method = $this->getMethod($class, $method_name);
