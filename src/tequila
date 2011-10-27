@@ -9,16 +9,27 @@ Gallic::$include_dirs[] = defined('__DIR__') ? __DIR__ : dirname(__FILE__);
 
 ////////////////////////////////////////////////////////////////////////////////
 
-$tequila = new Tequila();
+if (extension_loaded('readline'))
+{
+	$tequila = new Tequila_Readline();
+}
+else
+{
+	$tequila = new Tequila();
+}
 
 $config = parse_ini_file(dirname(__FILE__).'/../tequila.ini');
 if (isset($config['prompt']))
 {
 	$tequila->prompt = $config['prompt'];
 }
+
 if (isset($config['include_dirs']))
 {
-	$tequila->include_dirs = (array) $config['include_dirs'];
+	$tequila->class_loader = new Tequila_ClassLoader_Gallic();
+	$tequila->class_loader->dirs = (array) $config['include_dirs'];
 }
+
+$tequila->logger = new Tequila_Logger_File('test.log');
 
 $tequila->start();

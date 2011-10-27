@@ -3,13 +3,15 @@
 /**
  * This is Tequila's main class (obviously).
  */
-class Tequila
+abstract class Tequila
 {
 	// If we want to set these properties private, we should use the “__get” and
 	// “__set” magic methods to keep API compatibility.
 	public
-		$prompt = 'tequila> ',
-		$include_dirs = array();
+		$class_loader,
+		$include_dirs = array(),
+		$logger,
+		$prompt = 'tequila> ';
 
 	public function __construct()
 	{
@@ -21,11 +23,13 @@ class Tequila
 	{
 		switch ($name)
 		{
-		case 'history':
-			return $this->_history;
+		case 'is_running':
+			$name = '_'.$name;
+			return $this->$name;
 		}
-	}
 
+		throw new Exception('Getting incorrect property: '.__CLASS__.'::'.$name);
+	}
 
 	/**
 	 * Starts the interpreter's loop (prompt → parse → execute).
@@ -35,9 +39,8 @@ class Tequila
 		$this->_is_running = true;
 
 		do {
-			$this->write($this->prompt);
+			$string = $this->prompt($this->prompt);
 
-			$string = $this->readln();
 			if ($string === false)
 			{
 				$this->stop();
@@ -54,11 +57,11 @@ class Tequila
 				continue;
 			}
 
-			$this->_history[] = $string;
+			$this->addToHistory($string);
 
 			if ($n === 1)
 			{
-				$this->writeln('Missing method', STDERR);
+				$this->writeln('Missing method', true);
 				continue;
 			}
 
@@ -78,11 +81,11 @@ class Tequila
 			}
 			catch (Tequila_Exception $e)
 			{
-				$this->writeln($e->getMessage(), STDERR);
+				$this->writeln($e->getMessage(), true);
 			}
 			catch (Exception $e)
 			{
-				$this->writeln(get_class($e).': '.$e->getMessage(), STDERR);
+				$this->writeln(get_class($e).': '.$e->getMessage(), true);
 			}
 		} while ($this->_is_running);
 	}
@@ -110,6 +113,7 @@ class Tequila
 		foreach ($class->getMethods(ReflectionMethod::IS_PUBLIC) as $method)
 		{
 			$name = $method->getName();
+
 			if ($name[0] !== '_')
 			{
 				$methods[] = $name;
@@ -129,9 +133,20 @@ class Tequila
 	 */
 	public function getClass($class_name)
 	{
-		if (!(class_exists($class_name, false)
-		      || (Gallic_Loader::loadClass($class_name, $this->include_dirs)
-		          && class_exists($class_name, false))))
+		if (class_exists($class_name, false))
+		{
+			if (!isset($this->_loaded_classes[$class_name]))
+			{
+				// We did not load this class, denies this access.
+				throw new Tequila_NoSuchClass($class_name);
+			}
+		}
+		elseif ($this->class_loader->load($class_name) &&
+		        class_exists($class_name, false))
+		{
+			$this->_loaded_classes[$class_name] = true;
+		}
+		else
 		{
 			throw new Tequila_NoSuchClass($class_name);
 		}
@@ -198,33 +213,31 @@ class Tequila
 	}
 
 	/**
-	 * Reads a single ligne from the specified $file_handle.
-	 *
-	 * @return The line read or false if an error occured.
-	 */
-	public function readln($file_handle = STDIN)
-	{
-		return fgets($file_handle);
-	}
-
-	/**
 	 * Writes a string to the specified $file_handle.
 	 */
-	public function write($message = '', $file_handle = STDOUT)
+	public function write($string, $error = false)
 	{
-		fwrite($file_handle, $message);
+		fwrite($error ? STDERR : STDOUT, $string);
 	}
 
 	/**
 	 * Writes a string followed by a new line to the specified $file_handle.
 	 */
-	public function writeln($message = '', $file_handle = STDOUT)
+	public function writeln($string = '', $error = false)
 	{
-		$this->write($message.PHP_EOL);
+		$this->write($string.PHP_EOL, $error);
 	}
 
+	////////////////////////////////////////
+	// History manipulation
+
+	public abstract function addToHistory($string);
+
+	public abstract function clearHistory();
+
 	private
-		$_history    = array(),
-		$_hooks      = array(),
-		$_is_running = false;
+		$_is_running     = false,
+		$_loaded_classes = array(), // Used for security purposes.
+		$_logger,
+		$_user;
 }
