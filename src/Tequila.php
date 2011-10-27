@@ -40,9 +40,12 @@ abstract class Tequila
 		do {
 			$string = $this->prompt($this->prompt);
 
+			// Reading error.
 			if ($string === false)
 			{
+				$this->writeln();
 				$this->stop();
+
 				return;
 			}
 
@@ -51,6 +54,7 @@ abstract class Tequila
 			// TODO: handle multi-line parsing.
 			$entries = Tequila_Parser::parseString($string);
 
+			// Nothing significant has been entered.
 			if (($entries === false) || (($n = count($entries)) === 0))
 			{
 				continue;
@@ -212,15 +216,28 @@ abstract class Tequila
 	}
 
 	/**
-	 * Writes a string to the specified $file_handle.
+	 * Writes a string.
+	 *
+	 * @param string $string The string.
+	 * @param boolean $error Whether it is an error message.
 	 */
 	public function write($string, $error = false)
 	{
 		fwrite($error ? STDERR : STDOUT, $string);
+
+		if ($this->logger !== null)
+		{
+			$this->logger->log($string, $error ?
+			                   Tequila_Logger::WARNING :
+			                   Tequila_Logger::NOTICE);
+		}
 	}
 
 	/**
-	 * Writes a string followed by a new line to the specified $file_handle.
+	 * Writes a string followed by a new line.
+	 *
+	 * @param string $string The string.
+	 * @param boolean $error Whether it is an error message.
 	 */
 	public function writeln($string = '', $error = false)
 	{

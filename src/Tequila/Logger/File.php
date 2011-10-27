@@ -7,6 +7,8 @@ class Tequila_Logger_File extends Tequila_Logger
 {
 	public function __construct($file)
 	{
+		parent::__construct();
+
 		$this->file = $file;
 	}
 
@@ -33,13 +35,14 @@ class Tequila_Logger_File extends Tequila_Logger
 		switch ($name)
 		{
 		case 'file':
+			$this->_closeFile();
+
 			$handle = fopen($value, 'a');
 			if ($handle === false)
 			{
 				throw new Exception('Failed to open: '.$value);
 			}
 
-			$this->_closeFile();
 			$this->_file = $value;
 			$this->_handle = $handle;
 
@@ -57,11 +60,7 @@ class Tequila_Logger_File extends Tequila_Logger
 			throw new Exception('No file to write');
 		}
 
-		$string =
-			parent::getLevelName($level).PHP_EOL.
-			$message.PHP_EOL.PHP_EOL;
-
-		if (fwrite($this->_handle, $string))
+		if (fwrite($this->_handle, $message) === false)
 		{
 			throw new Exception('Failed to write: '.$this->_file);
 		}

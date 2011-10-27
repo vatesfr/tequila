@@ -15,7 +15,7 @@ if (extension_loaded('readline'))
 }
 else
 {
-	$tequila = new Tequila();
+	$tequila = new Tequila_Plain();
 }
 
 $config = parse_ini_file(dirname(__FILE__).'/../tequila.ini');

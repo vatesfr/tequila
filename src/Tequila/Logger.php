@@ -18,13 +18,13 @@ abstract class Tequila_Logger
 	{
 		switch ($level)
 		{
-		case DEBUG:
+		case self::DEBUG:
 			return 'DEBUG';
-		case NOTICE:
+		case self::NOTICE:
 			return 'NOTICE';
-		case WARNING:
+		case self::WARNING:
 			return 'WARNING';
-		case FATAL:
+		case self::FATAL:
 			return 'FATAL';
 		}
 
@@ -39,15 +39,15 @@ abstract class Tequila_Logger
 
 	public function __construct()
 	{
-		$this->level = NOTICE | WARNING | FATAL;
+		$this->level = self::NOTICE | self::WARNING | self::FATAL;
 	}
 
 	/**
 	 * Tells the logger there is something to log with a defined level.
 	 */
-	public final function log($message, $level = WARNING)
+	public final function log($message, $level = self::WARNING)
 	{
-		if (($level & $this->level) !== 0)
+		if (($level & $this->level) === $level)
 		{
 			$this->_log($message, $level);
 		}
