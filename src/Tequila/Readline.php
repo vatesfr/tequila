@@ -38,8 +38,26 @@ class Tequila_Readline extends Tequila
 		return readline($prompt);
 	}
 
+	// TODO: correct behaviour.
 	private function _complete()
 	{
-		return array();
+		$info = readline_info();
+
+		// Gets the substring in the line buffer up to the cursor position.
+		$string = substr($info['line_buffer'], 0, $info['point']);
+
+		$parser = new Tequila_Parser();
+		$parser->parse($string);
+		$words = $parser->words;
+		$n = count($words);
+
+		if (($n === 0) || ($n > 2))
+		{
+			return array();
+		}
+
+		$methods = $this->getAvailableMethods($this->getClass($words[0]));
+
+		return $methods;
 	}
 }
