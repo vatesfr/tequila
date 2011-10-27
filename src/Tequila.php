@@ -9,7 +9,6 @@ abstract class Tequila
 	// “__set” magic methods to keep API compatibility.
 	public
 		$class_loader,
-		$include_dirs = array(),
 		$logger,
 		$prompt = 'tequila> ';
 
