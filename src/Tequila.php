@@ -49,6 +49,10 @@ abstract class Tequila
 				return;
 			}
 
+			// To make the  log as close as possible as  the user screen, writes
+			// the given data.
+			$this->logger->log($string, Tequila_Logger::NOTICE);
+
 			$string = rtrim($string, "\n");
 
 			// TODO: handle multi-line parsing.
