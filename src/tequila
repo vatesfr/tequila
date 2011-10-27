@@ -1,0 +1,24 @@
+#!/usr/bin/env php
+<?php
+
+if (!class_exists('Gallic'))
+{
+	require 'Gallic.php';
+}
+Gallic::$include_dirs[] = defined('__DIR__') ? __DIR__ : dirname(__FILE__);
+
+////////////////////////////////////////////////////////////////////////////////
+
+$tequila = new Tequila();
+
+$config = parse_ini_file(dirname(__FILE__).'/../tequila.ini');
+if (isset($config['prompt']))
+{
+	$tequila->prompt = $config['prompt'];
+}
+if (isset($config['include_dirs']))
+{
+	$tequila->include_dirs = (array) $config['include_dirs'];
+}
+
+$tequila->start();
