@@ -23,9 +23,9 @@ class Tequila_Readline extends Tequila
 		return parent::__get($name);
 	}
 
-	public function addToHistory($string)
+	public function addToHistory($line)
 	{
-		readline_add_history($string);
+		readline_add_history($line);
 	}
 
 	public function clearHistory()

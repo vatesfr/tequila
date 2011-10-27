@@ -108,6 +108,8 @@ abstract class Tequila
 	 * Returns an array containing all the available methods of $class.
 	 *
 	 * Available methods are public and do not start with a “_”.
+	 *
+	 * @return array
 	 */
 	public function getAvailableMethods(ReflectionClass $class)
 	{
@@ -127,10 +129,13 @@ abstract class Tequila
 	}
 
 	/**
-	 * Returns   a  ReflectionClass   instance  describing   the   class  called
-	 * $class_name.
+	 * Returns the class called $class_name.
 	 *
 	 * If the class is undefined, this method will try to load it.
+	 *
+	 * @param string $class_name
+	 *
+	 * @return ReflectionClass
 	 *
 	 * @throws Tequila_NoSuchClass If the class could not be found.
 	 */
@@ -158,8 +163,12 @@ abstract class Tequila
 	}
 
 	/**
-	 * Returns  a   ReflectionMethod  instance  describing   the  method  called
-	 * $method_name of the class $class.
+	 * Returns the method called $method_name of the class $class.
+	 *
+	 * @param ReflectionClass $class
+	 * @param string          $method_name
+	 *
+	 * @return ReflectionMethod
 	 *
 	 * @throws Tequila_NoSuchMethod If the method could not be found.
 	 */
@@ -180,12 +189,12 @@ abstract class Tequila
 	 * $method_name method with  the name of the current  user and $arguments as
 	 * arguments.
 	 *
-	 * @throws Tequila_NoSuchClass If the class could not be found.
-	 * @throws Tequila_NoSuchMethod If the method could not be found.
-	 * @throws  Tequila_NotEnoughArgument If the  method expects  more arguments
+	 * @throws Tequila_NoSuchClass        If the class could not be found.
+	 * @throws Tequila_NoSuchMethod       If the method could not be found.
+	 * @throws Tequila_NotEnoughArguments If  the method  expects more arguments
 	 *                                    than those provided.
 	 *
-	 * @return The return value of the method.
+	 * @return mixed The return value of the method.
 	 */
 	public function execute($class_name, $method_name, array $arguments = null)
 	{
@@ -247,8 +256,16 @@ abstract class Tequila
 	////////////////////////////////////////
 	// History manipulation
 
-	public abstract function addToHistory($string);
+	/**
+	 * Adds a line to the history.
+	 *
+	 * @param string $line
+	 */
+	public abstract function addToHistory($line);
 
+	/**
+	 * Clears the history.
+	 */
 	public abstract function clearHistory();
 
 	private

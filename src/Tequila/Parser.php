@@ -20,6 +20,10 @@ final class Tequila_Parser
 	/**
 	 * Helper which returns an array of every words in the string if the parsing
 	 * is complete otherwise false.
+	 *
+	 * @param string $string
+	 *
+	 * @return array|false
 	 */
 	public static function parseString($string)
 	{
@@ -54,8 +58,10 @@ final class Tequila_Parser
 	 * If the parsing is incomplete, the  user can call this function again with
 	 * another string which will complete it.
 	 *
-	 * @return Whether the parsing is complete, i.e. quoted strings are properly
-	 *         closed.
+	 * @param string $string
+	 *
+	 * @return boolean Whether the parsing  is complete, i.e. quoted strings are
+	 *                 properly closed.
 	 */
 	public function parse($string)
 	{

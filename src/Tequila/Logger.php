@@ -13,6 +13,10 @@ abstract class Tequila_Logger
 
 	/**
 	 * Returns the string representation of $level.
+	 *
+	 * @param integer $level
+	 *
+	 * @return string
 	 */
 	static public function getLevelName($level)
 	{
@@ -44,6 +48,9 @@ abstract class Tequila_Logger
 
 	/**
 	 * Tells the logger there is something to log with a defined level.
+	 *
+	 * @param string  $message
+	 * @param integer $level
 	 */
 	public final function log($message, $level = self::WARNING)
 	{
@@ -55,6 +62,9 @@ abstract class Tequila_Logger
 
 	/**
 	 * Triggers the logging of a message of a given level.
+	 *
+	 * @param string  $message
+	 * @param integer $level
 	 */
 	protected abstract function _log($message, $level);
 }
