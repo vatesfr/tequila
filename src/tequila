@@ -9,6 +9,33 @@ Gallic::$include_dirs[] = defined('__DIR__') ? __DIR__ : dirname(__FILE__);
 
 ////////////////////////////////////////////////////////////////////////////////
 
+function loadConfig(array $config, Tequila $tequila)
+{
+	foreach (array('prompt') as $entry)
+	{
+		if (isset($config[$entry]))
+		{
+			$tequila->$entry = $tequila->parseConfigEntry($config[$entry]);
+		}
+	}
+
+	if (isset($config['include_dirs']))
+	{
+		$tequila->class_loader = new Tequila_ClassLoader_Gallic(
+			$tequila->parseConfigEntry($config['include_dirs'])
+		);
+	}
+
+	if (isset($config['log_file']))
+	{
+		$tequila->logger = new Tequila_Logger_File(
+			$tequila->parseConfigEntry($config['log_file'])
+		);
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 if (extension_loaded('readline'))
 {
 	$tequila = new Tequila_Readline();
@@ -18,18 +45,6 @@ else
 	$tequila = new Tequila_Plain();
 }
 
-$config = parse_ini_file(dirname(__FILE__).'/../tequila.ini');
-if (isset($config['prompt']))
-{
-	$tequila->prompt = $config['prompt'];
-}
-
-if (isset($config['include_dirs']))
-{
-	$tequila->class_loader = new Tequila_ClassLoader_Gallic();
-	$tequila->class_loader->dirs = (array) $config['include_dirs'];
-}
-
-$tequila->logger = new Tequila_Logger_File('test.log');
+loadConfig(parse_ini_file('/etc/tequila/tequila.ini'), $tequila);
 
 $tequila->start();

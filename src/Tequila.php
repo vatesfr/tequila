@@ -23,6 +23,7 @@ abstract class Tequila
 		switch ($name)
 		{
 		case 'is_running':
+		case 'user':
 			$name = '_'.$name;
 			return $this->$name;
 		}
@@ -30,11 +31,29 @@ abstract class Tequila
 		throw new Exception('Getting incorrect property: '.__CLASS__.'::'.$name);
 	}
 
+	public function __isset($name)
+	{
+		try
+		{
+			$this->__get($name);
+			return true;
+		}
+		catch (Exception $e)
+		{
+			return false;
+		}
+	}
+
 	/**
 	 * Starts the interpreter's loop (prompt → parse → execute).
 	 */
 	public function start()
 	{
+		if ($this->is_running)
+		{
+			throw new Exception(__CLASS__.' is already running');
+		}
+
 		$this->_is_running = true;
 
 		do {
@@ -257,6 +276,29 @@ abstract class Tequila
 		$this->write($string.PHP_EOL, $error);
 	}
 
+	/**
+	 * Replaces variables by their value in a configuration entry.
+	 *
+	 * A variable has the following format: @A_VARIABLE@.
+	 *
+	 * Currently the following replacement are done:
+	 * - @USER@: the user name (not the $USER environment variable);
+	 * - @$name@: by the environment variable called $name (if exists).
+	 */
+	public function parseConfigEntry($entry)
+	{
+		if (is_array($entry))
+		{
+			return array_map(array($this, 'parseConfigEntry'), $entry);
+		}
+
+		return preg_replace_callback(
+			'/@([A-Z_]+)@/',
+			array($this, '_getConfigVariables'),
+			$entry
+		);
+	}
+
 	////////////////////////////////////////
 	// History manipulation
 
@@ -275,6 +317,19 @@ abstract class Tequila
 	private
 		$_is_running     = false,
 		$_loaded_classes = array(), // Used for security purposes.
-		$_logger,
 		$_user;
+
+	private function _getConfigVariables(array $matches)
+	{
+		switch ($matches[1])
+		{
+		case 'USER':
+			return $this->user;
+		}
+
+		$value = getenv($matches[1]);
+
+		// If no matches: no replacements.
+		return ($value !== false ? $value : $matches[0]);
+	}
 }

@@ -5,10 +5,15 @@
  */
 class Tequila_ClassLoader_Gallic extends Tequila_ClassLoader
 {
-	public $dirs = array();
+	public function __construct($dirs)
+	{
+		$this->_dirs = (array) $dirs;
+	}
 
 	public function load($class_name)
 	{
-		return Gallic_Loader::loadClass($class_name, $this->dirs);
+		return Gallic_Loader::loadClass($class_name, $this->_dirs);
 	}
+
+	private $_dirs;
 }
