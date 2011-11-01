@@ -45,13 +45,13 @@ abstract class Tequila
 	}
 
 	/**
-	 * Starts the interpreter's loop (prompt → parse → execute).
+	 * Starts the interpreter's loop (prompt → execute).
 	 */
 	public function start()
 	{
 		if ($this->is_running)
 		{
-			throw new Exception(__CLASS__.' is already running');
+			throw new Tequila_Exception(__CLASS__.' is already running');
 		}
 
 		$this->_is_running = true;
@@ -72,29 +72,9 @@ abstract class Tequila
 			// the given data.
 			$this->logger->log($string, Tequila_Logger::NOTICE);
 
-			$string = rtrim($string, "\n");
-
-			// TODO: handle multi-line parsing.
-			$entries = Tequila_Parser::parseString($string);
-
-			// Nothing significant has been entered.
-			if (($entries === false) || (($n = count($entries)) === 0))
-			{
-				continue;
-			}
-
-			$this->addToHistory($string);
-
-			if ($n === 1)
-			{
-				$this->writeln('Missing method', true);
-				continue;
-			}
-
 			try
 			{
-				$result = $this->execute($entries[0], $entries[1],
-				                         array_slice($entries, 2));
+				$result = $this->executeCommand($string);
 
 				if ($result !== null)
 				{
@@ -205,6 +185,33 @@ abstract class Tequila
 		{
 			throw new Tequila_NoSuchMethod($class->getName(), $method_name);
 		}
+	}
+
+	/**
+	 *
+	 */
+	public function executeCommand($string)
+	{
+		$string = rtrim($string, "\n");
+
+		// TODO: handle multi-line parsing.
+		$entries = Tequila_Parser::parseString($string);
+
+		// Nothing significant has been entered.
+		if (($entries === false) || (($n = count($entries)) === 0))
+		{
+			throw new Tequila_UnspecifiedClass();
+		}
+
+		$this->addToHistory($string);
+
+		if ($n === 1)
+		{
+			throw new Tequila_UnspecifiedMethod($entries[0]);
+		}
+
+		return $this->execute($entries[0], $entries[1],
+		                      array_slice($entries, 2));
 	}
 
 	/**
