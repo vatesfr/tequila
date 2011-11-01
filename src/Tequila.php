@@ -5,6 +5,22 @@
  */
 abstract class Tequila
 {
+	/**
+	 * Creates  a Tequila  instance  depending whether  the  Readline module  is
+	 * loaded or not.
+	 *
+	 * @return Tequila
+	 */
+	public static function create()
+	{
+		if (extension_loaded('readline'))
+		{
+			return new Tequila_Readline();
+		}
+
+		return new Tequila_Plain();
+	}
+
 	// If we want to set these properties private, we should use the “__get” and
 	// “__set” magic methods to keep API compatibility.
 	public
