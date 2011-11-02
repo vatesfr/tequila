@@ -59,15 +59,32 @@ abstract class Tequila
 
 	public function __set($name, $value)
 	{
+		static $classes = array(
+			'class_loader' => 'Tequila_ClassLoader',
+			'logger'       => 'Tequila_Logger'
+		);
+
 		switch ($name)
 		{
 		case 'class_loader':
 		case 'logger':
-			$this->_checkClassAndSet($name, $value);
+			// Only certain variables support type checking..
+			assert(isset($classes[$name]));
+
+			$class = $classes[$name];
+			if (!($value instanceof $class))
+			{
+				throw new Tequila_Exception(
+					__CLASS__.'::'.$name.' must be an instance of '.$class
+				);
+			}
+
+			$name = '_'.$name;
+			$this->$name = $value;
 			break;
 		default:
 			throw new Tequila_Exception(
-				'Settting incorrect property: '.__CLASS__.'::'.$name
+				'Setting incorrect property: '.__CLASS__.'::'.$name
 			);
 		}
 	}
@@ -362,28 +379,5 @@ abstract class Tequila
 
 		// If no matches: no replacements.
 		return ($value !== false ? $value : $matches[0]);
-	}
-
-	private function _checkClassAndSet($name, $value)
-	{
-		static $classes = array(
-			'class_loader' => 'Tequila_ClassLoader',
-			'logger'       => 'Tequila_Logger'
-		);
-
-		// Only certain variables must be passed to this method.
-		assert(isset($classes[$name]));
-
-		$class = $classes[$name];
-
-		if (!($value instanceof $class))
-		{
-			throw new Tequila_Exception(
-				__CLASS__.'::'.$name.' must be an instance of '.$class
-			);
-		}
-
-		$name = '_'.$name;
-		$this->$name = $value;
 	}
 }
