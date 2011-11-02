@@ -2,6 +2,13 @@
 
 /**
  * This is Tequila's main class (obviously).
+ *
+ * @property-read  array               $history
+ * @property-read  boolean             $is_running
+ * @property-read  string              $user
+ * @property-write Tequila_ClassLoader $class_loader
+ * @property-write Tequila_Logger      $logger
+ *
  */
 abstract class Tequila
 {

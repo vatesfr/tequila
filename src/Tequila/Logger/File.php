@@ -2,6 +2,8 @@
 
 /**
  * This logger stores the data in a file.
+ *
+ * @property string $file
  */
 class Tequila_Logger_File extends Tequila_Logger
 {

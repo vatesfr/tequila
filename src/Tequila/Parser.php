@@ -14,6 +14,8 @@
  * - more" "complex\ word" with special \\ and \""
  *
  * The parser is able to parse multiple strings in the same session.
+ *
+ * @property-read array $words The words found during the parsing.
  */
 final class Tequila_Parser
 {
