@@ -24,14 +24,15 @@ abstract class Tequila
 	// If we want to set these properties private, we should use the “__get” and
 	// “__set” magic methods to keep API compatibility.
 	public
-		$class_loader,
-		$logger,
 		$prompt = 'tequila> ';
 
 	public function __construct()
 	{
 		$user_info = posix_getpwuid(posix_getuid());
 		$this->_user = $user_info['name'];
+
+		$this->class_loader = new Tequila_ClassLoader_Void();
+		$this->logger       = new Tequila_Logger_Void();
 	}
 
 	public function __get($name)
@@ -44,19 +45,23 @@ abstract class Tequila
 			return $this->$name;
 		}
 
-		throw new Exception('Getting incorrect property: '.__CLASS__.'::'.$name);
+		throw new Tequila_Exception(
+			'Getting incorrect property: '.__CLASS__.'::'.$name
+		);
 	}
 
-	public function __isset($name)
+	public function __set($name, $value)
 	{
-		try
+		switch ($name)
 		{
-			$this->__get($name);
-			return true;
-		}
-		catch (Exception $e)
-		{
-			return false;
+		case 'class_loader':
+		case 'logger':
+			$this->_checkClassAndSet($name, $value);
+			break;
+		default:
+			throw new Tequila_Exception(
+				'Settting incorrect property: '.__CLASS__.'::'.$name
+			);
 		}
 	}
 
@@ -86,7 +91,7 @@ abstract class Tequila
 
 			// To make the  log as close as possible as  the user screen, writes
 			// the given data.
-			$this->logger->log($string, Tequila_Logger::NOTICE);
+			$this->_logger->log($string, Tequila_Logger::NOTICE);
 
 			try
 			{
@@ -95,10 +100,6 @@ abstract class Tequila
 				if ($result !== null)
 				{
 					$this->writeln($result);
-				}
-				elseif (isset($this->messages["null_value"]))
-				{
-					$this->writeln($this->messages["null_value"]);
 				}
 			}
 			catch (Tequila_Exception $e)
@@ -168,7 +169,7 @@ abstract class Tequila
 				throw new Tequila_NoSuchClass($class_name);
 			}
 		}
-		elseif ($this->class_loader->load($class_name) &&
+		elseif ($this->_class_loader->load($class_name) &&
 		        class_exists($class_name, false))
 		{
 			$this->_loaded_classes[$class_name] = true;
@@ -280,12 +281,10 @@ abstract class Tequila
 	{
 		fwrite($error ? STDERR : STDOUT, $string);
 
-		if ($this->logger !== null)
-		{
-			$this->logger->log($string, $error ?
-			                   Tequila_Logger::WARNING :
-			                   Tequila_Logger::NOTICE);
-		}
+		$this->_logger->log(
+			$string,
+			$error ? Tequila_Logger::WARNING : Tequila_Logger::NOTICE
+		);
 	}
 
 	/**
@@ -338,8 +337,10 @@ abstract class Tequila
 	public abstract function clearHistory();
 
 	private
+		$_class_loader,
 		$_is_running     = false,
 		$_loaded_classes = array(), // Used for security purposes.
+		$_logger,
 		$_user;
 
 	private function _getConfigVariables(array $matches)
@@ -354,5 +355,28 @@ abstract class Tequila
 
 		// If no matches: no replacements.
 		return ($value !== false ? $value : $matches[0]);
+	}
+
+	private function _checkClassAndSet($name, $value)
+	{
+		static $classes = array(
+			'class_loader' => 'Tequila_ClassLoader',
+			'logger'       => 'Tequila_Logger'
+		);
+
+		// Only certain variables must be passed to this method.
+		assert(isset($classes[$name]));
+
+		$class = $classes[$name];
+
+		if (!($value instanceof $class))
+		{
+			throw new Tequila_Exception(
+				__CLASS__.'::'.$name.' must be an instance of '.$class
+			);
+		}
+
+		$name = '_'.$name;
+		$this->$name = $value;
 	}
 }

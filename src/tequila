@@ -1,11 +1,15 @@
 #!/usr/bin/env php
 <?php
 
+$_Tequila_dir = defined('__DIR__') ? __DIR__ : dirname(__FILE__);
+
 if (!class_exists('Gallic'))
 {
-	require 'Gallic.php';
+	require $_Tequila_dir.'/Gallic.php';
 }
-Gallic::$include_dirs[] = defined('__DIR__') ? __DIR__ : dirname(__FILE__);
+Gallic::$include_dirs[] = $_Tequila_dir;
+
+unset($_Tequila_dir);
 
 ////////////////////////////////////////////////////////////////////////////////
 

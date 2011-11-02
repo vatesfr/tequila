@@ -50,6 +50,10 @@ final class Tequila_Parser
 			$name = '_'.$name;
 			return $this->$name;
 		}
+
+		throw new Tequila_Exception(
+			'Getting incorrect property: '.__CLASS__.'::'.$name
+		);
 	}
 
 	/**
