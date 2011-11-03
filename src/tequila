@@ -42,6 +42,6 @@ function loadConfig(array $config, Tequila $tequila)
 
 $tequila = Tequila::create();
 
-loadConfig(parse_ini_file('/etc/tequila/tequila.ini'), $tequila);
+loadConfig(parse_ini_file('/etc/tequila/config.ini'), $tequila);
 
 $tequila->start();
