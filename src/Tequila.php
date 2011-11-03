@@ -47,10 +47,8 @@ abstract class Tequila
 		switch ($name)
 		{
 		case 'class_loader':
-		case 'logger':
-			$name = '_'.$name;
-			return new Gallic_NonAssignableReference($this->$name);
 		case 'is_running':
+		case 'logger':
 		case 'user':
 			$name = '_'.$name;
 			return $this->$name;

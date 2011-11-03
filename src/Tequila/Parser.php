@@ -48,6 +48,8 @@ final class Tequila_Parser
 	{
 		switch ($name)
 		{
+		case 'is_complete':
+			return !($this->_escaped || $this->_quoted);
 		case 'words':
 			$name = '_'.$name;
 			return $this->$name;
