@@ -8,6 +8,10 @@ class Tequila_Readline extends Tequila
 {
 	public function __construct()
 	{
+		// Readline use  a global state, to  keep the unit  tests functioning we
+		// need to manually discard the history.
+		readline_clear_history();
+
 		parent::__construct();
 		readline_completion_function(array($this, '_complete'));
 	}
