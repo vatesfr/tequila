@@ -9,6 +9,8 @@ class Tequila_ParserTest extends PHPUnit_Framework_TestCase
 		$this->object = new Tequila_Parser();
 	}
 
+	////////////////////////////////////////
+
 	public function testConstructor()
 	{
 		$this->assertInstanceOf('Tequila_Parser', $this->object);
@@ -17,6 +19,8 @@ class Tequila_ParserTest extends PHPUnit_Framework_TestCase
 
 		$this->assertEmpty($this->object->words);
 	}
+
+	//--------------------------------------
 
 	public function parseProvider()
 	{
@@ -77,8 +81,10 @@ class Tequila_ParserTest extends PHPUnit_Framework_TestCase
 		$result = (array) $result;
 
 		$this->assertTrue($this->object->is_complete);
-		$this->assertEquals($result, $this->object->words);
+		$this->assertSame($result, $this->object->words);
 	}
+
+	//--------------------------------------
 
 	public function testReset()
 	{

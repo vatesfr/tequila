@@ -259,8 +259,7 @@ abstract class Tequila
 
 	/**
 	 * Instanciates  an  object of  the  class  $class_name  and calls  the  its
-	 * $method_name method with  the name of the current  user and $arguments as
-	 * arguments.
+	 * $method_name method with $arguments as arguments.
 	 *
 	 * @throws Tequila_NoSuchClass        If the class could not be found.
 	 * @throws Tequila_NoSuchMethod       If the method could not be found.
@@ -276,8 +275,7 @@ abstract class Tequila
 
 		$arguments = (array) $arguments;
 
-		// Do not count the first parameter which is the user.
-		$n = $method->getNumberOfRequiredParameters() - 1;
+		$n = $method->getNumberOfRequiredParameters();
 		if (count($arguments) < $n)
 		{
 			throw new Tequila_NotEnoughArguments($class_name, $method_name, $n);
@@ -291,8 +289,6 @@ abstract class Tequila
 		{
 			$object = $class->newInstance();
 		}
-
-		array_unshift($arguments, $this->_user);
 
 		return $method->invokeArgs($object, $arguments);
 	}

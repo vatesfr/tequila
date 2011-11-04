@@ -154,7 +154,7 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 		$this->object->class_loader = $class_loader;
 
 		$class = $this->object->getClass($class_name);
-		$this->assertEquals($class_name, $class->getName());
+		$this->assertSame($class_name, $class->getName());
 	}
 
 	//--------------------------------------
@@ -168,8 +168,8 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 			$this->object->getClass(self::getNextClass())
 		);
 
-		$this->assertEquals(1, count($methods));
-		$this->assertEquals('public_method', $methods[0]);
+		$this->assertSame(1, count($methods));
+		$this->assertSame('public_method', $methods[0]);
 	}
 
 	//--------------------------------------
@@ -207,6 +207,6 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 			$method_name
 		);
 
-		$this->assertEquals($method_name, $method->getname());
+		$this->assertSame($method_name, $method->getname());
 	}
 }

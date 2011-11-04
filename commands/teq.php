@@ -12,7 +12,7 @@ class teq extends Tequila_Module
 	 * When called with  one argument, lists the available  commands for a given
 	 * class, otherwise lists the parameters of a given command.
 	 */
-	public function describe($user, $class_name, $method_name = null)
+	public function describe($class_name, $method_name = null)
 	{
 		$class = $this->_tequila->getClass($class_name);
 
