@@ -33,15 +33,9 @@ abstract class Tequila
 	public
 		$prompt = 'tequila> ';
 
-	public function __construct()
-	{
-		$user_info = posix_getpwuid(posix_getuid());
-		$this->_user = $user_info['name'];
-
-		$this->class_loader = new Tequila_ClassLoader_Void();
-		$this->logger       = new Tequila_Logger_Void();
-	}
-
+	/**
+	 * @todo Unit tests.
+	 */
 	public function __get($name)
 	{
 		switch ($name)
@@ -93,6 +87,10 @@ abstract class Tequila
 
 	/**
 	 * Starts the interpreter's loop (prompt → execute).
+	 *
+	 * @throws Tequila_Exception If Tequila is already running.
+	 *
+	 * @todo Unit tests.
 	 */
 	public function start()
 	{
@@ -141,6 +139,8 @@ abstract class Tequila
 
 	/**
 	 * Stops the interpreter's loop.
+	 *
+	 * @todo Unit tests.
 	 */
 	public function stop()
 	{
@@ -216,13 +216,26 @@ abstract class Tequila
 	 *
 	 * @return ReflectionMethod
 	 *
-	 * @throws Tequila_NoSuchMethod If the method could not be found.
+	 * @throws Tequila_NoSuchMethod If the method could not be found, is private
+	 *                              or start with a “_”.
 	 */
 	public function getMethod(ReflectionClass $class, $method_name)
 	{
+		if ($method_name[0] === '_')
+		{
+			throw new Tequila_NoSuchMethod($class->getName(), $method_name);
+		}
+
 		try
 		{
-			return $class->getMethod($method_name);
+			$method = $class->getMethod($method_name);
+
+			if (!$method->isPublic())
+			{
+				throw new Tequila_NoSuchMethod($class->getName(), $method_name);
+			}
+
+			return $method;
 		}
 		catch (ReflectionException $e)
 		{
@@ -231,14 +244,23 @@ abstract class Tequila
 	}
 
 	/**
+	 * @param string $command
 	 *
+	 * @return mixed The result of the executed method.
+	 *
+	 * @throws Tequila_UnspecifiedClass   The class is not specified.
+	 * @throws Tequila_UnspecifiedMethod  The method is not specified.
+	 * @throws Tequila_NoSuchClass        If the class could not be found.
+	 * @throws Tequila_NoSuchMethod       If the method could not be found.
+	 * @throws Tequila_NotEnoughArguments If  the method  expects more arguments
+	 *                                    than those provided.
 	 */
-	public function executeCommand($string)
+	public function executeCommand($command)
 	{
-		$string = rtrim($string, "\n");
+		$command = rtrim($command, "\n");
 
 		// TODO: handle multi-line parsing.
-		$entries = Tequila_Parser::parseString($string);
+		$entries = Tequila_Parser::parseString($command);
 
 		// Nothing significant has been entered.
 		if (($entries === false) || (($n = count($entries)) === 0))
@@ -246,7 +268,7 @@ abstract class Tequila
 			throw new Tequila_UnspecifiedClass();
 		}
 
-		$this->addToHistory($string);
+		$this->addToHistory($command);
 
 		if ($n === 1)
 		{
@@ -357,6 +379,15 @@ abstract class Tequila
 	 * Clears the history.
 	 */
 	public abstract function clearHistory();
+
+	protected function __construct()
+	{
+		$user_info = posix_getpwuid(posix_getuid());
+		$this->_user = $user_info['name'];
+
+		$this->class_loader = new Tequila_ClassLoader_Void();
+		$this->logger       = new Tequila_Logger_Void();
+	}
 
 	private
 		$_class_loader,
