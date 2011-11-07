@@ -5,6 +5,8 @@
  * or on the standard error otherwise.
  *
  * Due to the implementation, it is currently non testable.
+ *
+ * @codeCoverageIgnore
  */
 class Tequila_Writer_Plain extends Tequila_Writer
 {

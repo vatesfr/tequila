@@ -108,6 +108,7 @@ class MyTequilaModule extends Tequila_Module
 
 /**
  * @covers Tequila
+ * @covers Tequila_Module
  */
 class TequilaTest extends PHPUnit_Framework_TestCase
 {

@@ -5,7 +5,6 @@
  */
 abstract class Tequila_Logger
 {
-
 	/**
 	 * Triggers the logging of a message of a given level.
 	 *

@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * @codeCoverageIgnore
+ */
 class Tequila_UnspecifiedClass extends Tequila_Exception
 {
 	public function __construct()

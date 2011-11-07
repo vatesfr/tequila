@@ -1,7 +1,12 @@
 <?php
 
 /**
+ * A reader  is an object  which has for  sole mission to read  strings (usually
+ * lines) from somewhere.
  *
+ * This class provides no implementations, there is nothing to test.
+ *
+ * @codeCoverageIgnore
  */
 abstract class Tequila_Reader
 {
