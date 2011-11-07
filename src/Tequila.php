@@ -5,33 +5,69 @@
  *
  * @property Tequila_ClassLoader $class_loader
  * @property Tequila_Logger      $logger
-
- * @property-read array   $history
+ * @property Tequila_Reader      $reader
+ * @property Tequila_Writer      $writer
+ *
  * @property-read boolean $is_running
  * @property-read string  $user
  */
-abstract class Tequila
+class Tequila
 {
-	/**
-	 * Creates  a Tequila  instance  depending whether  the  Readline module  is
-	 * loaded or not.
-	 *
-	 * @return Tequila
-	 */
-	public static function create()
-	{
-		if (extension_loaded('readline'))
-		{
-			return new Tequila_Readline();
-		}
-
-		return new Tequila_Plain();
-	}
-
 	// If we want to set these properties private, we should use the “__get” and
 	// “__set” magic methods to keep API compatibility.
 	public
 		$prompt = 'tequila> ';
+
+	public function __construct(
+		Tequila_ClassLoader $class_loader = null,
+		Tequila_Logger      $logger       = null,
+		Tequila_Reader      $reader       = null,
+		Tequila_Writer      $writer       = null
+	)
+	{
+		$user_info = posix_getpwuid(posix_getuid());
+		$this->_user = $user_info['name'];
+
+		if ($class_loader !== null)
+		{
+			$this->class_loader = $class_loader;
+		}
+		else
+		{
+			$this->class_loader = new Tequila_ClassLoader_Void();
+		}
+
+		if ($logger !== null)
+		{
+			$this->logger = $logger;
+		}
+		else
+		{
+			$this->logger = new Tequila_Logger_Void();
+		}
+
+		if ($reader !== null)
+		{
+			$this->reader = $reader;
+		}
+		elseif (extension_loaded('readline'))
+		{
+			$this->reader = new Tequila_Reader_Readline();
+		}
+		else
+		{
+			$this->reader = new Tequila_Reader_Plain();
+		}
+
+		if ($writer !== null)
+		{
+			$this->writer = $writer;
+		}
+		else
+		{
+			$this->writer = new Tequila_Writer_Plain();
+		}
+	}
 
 	/**
 	 * @todo Unit tests.
@@ -43,7 +79,9 @@ abstract class Tequila
 		case 'class_loader':
 		case 'is_running':
 		case 'logger':
+		case 'reader':
 		case 'user':
+		case 'writer':
 			$name = '_'.$name;
 			return $this->$name;
 		}
@@ -57,13 +95,17 @@ abstract class Tequila
 	{
 		static $classes = array(
 			'class_loader' => 'Tequila_ClassLoader',
-			'logger'       => 'Tequila_Logger'
+			'logger'       => 'Tequila_Logger',
+			'reader'       => 'Tequila_Reader',
+			'writer'       => 'Tequila_Writer',
 		);
 
 		switch ($name)
 		{
 		case 'class_loader':
 		case 'logger':
+		case 'reader':
+		case 'writer':
 			// Only certain variables support type checking..
 			assert(isset($classes[$name]));
 
@@ -260,15 +302,17 @@ abstract class Tequila
 		$command = rtrim($command, "\n");
 
 		// TODO: handle multi-line parsing.
-		$entries = Tequila_Parser::parseString($command);
+		$parser = new Tequila_Parser();
+		$parser->parse($command);
+		$entries = $parser->words;
 
 		// Nothing significant has been entered.
-		if (($entries === false) || (($n = count($entries)) === 0))
+		if (!$parser->is_complete ||
+		    ($entries === false) ||
+		    (($n = count($entries)) === 0))
 		{
 			throw new Tequila_UnspecifiedClass();
 		}
-
-		$this->addToHistory($command);
 
 		if ($n === 1)
 		{
@@ -315,6 +359,13 @@ abstract class Tequila
 		return $method->invokeArgs($object, $arguments);
 	}
 
+	public function prompt($prompt)
+	{
+		$this->write($prompt);
+
+		return $this->_reader->read($this);
+	}
+
 	/**
 	 * Writes a string.
 	 *
@@ -323,7 +374,7 @@ abstract class Tequila
 	 */
 	public function write($string, $error = false)
 	{
-		fwrite($error ? STDERR : STDOUT, $string);
+		$this->_writer->write($string, $error);
 
 		$this->_logger->log(
 			$string,
@@ -365,36 +416,14 @@ abstract class Tequila
 		);
 	}
 
-	////////////////////////////////////////
-	// History manipulation
-
-	/**
-	 * Adds a line to the history.
-	 *
-	 * @param string $line
-	 */
-	public abstract function addToHistory($line);
-
-	/**
-	 * Clears the history.
-	 */
-	public abstract function clearHistory();
-
-	protected function __construct()
-	{
-		$user_info = posix_getpwuid(posix_getuid());
-		$this->_user = $user_info['name'];
-
-		$this->class_loader = new Tequila_ClassLoader_Void();
-		$this->logger       = new Tequila_Logger_Void();
-	}
-
 	private
 		$_class_loader,
 		$_is_running     = false,
 		$_loaded_classes = array(), // Used for security purposes.
 		$_logger,
-		$_user;
+		$_reader,
+		$_user,
+		$_writer;
 
 	private function _getConfigVariables(array $matches)
 	{

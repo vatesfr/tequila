@@ -5,6 +5,15 @@
  */
 abstract class Tequila_Logger
 {
+
+	/**
+	 * Triggers the logging of a message of a given level.
+	 *
+	 * @param string  $message
+	 * @param integer $level
+	 */
+	abstract protected function _log($message, $level);
+
 	const
 		DEBUG   = 1,
 		NOTICE  = 2,
@@ -59,12 +68,4 @@ abstract class Tequila_Logger
 			$this->_log($message, $level);
 		}
 	}
-
-	/**
-	 * Triggers the logging of a message of a given level.
-	 *
-	 * @param string  $message
-	 * @param integer $level
-	 */
-	protected abstract function _log($message, $level);
 }

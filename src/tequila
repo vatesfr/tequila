@@ -40,7 +40,7 @@ function loadConfig(array $config, Tequila $tequila)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-$tequila = Tequila::create();
+$tequila = new Tequila();
 
 loadConfig(parse_ini_file('/etc/tequila/config.ini'), $tequila);
 

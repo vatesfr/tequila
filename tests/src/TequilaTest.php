@@ -17,6 +17,43 @@ class MyClassLoader extends Tequila_ClassLoader
 	}
 }
 
+class MyLogger extends Tequila_Logger
+{
+	public $log = array();
+
+	protected function _log($message, $level)
+	{
+		$this->log[] = array($message, $level);
+	}
+}
+
+class MyReader extends Tequila_Reader
+{
+	public $data = array();
+
+	public function read(Tequila $tequila)
+	{
+		if (empty($this->data))
+		{
+			return false;
+		}
+
+		return array_shift($this->data);
+	}
+}
+
+class MyWriter extends Tequila_Writer
+{
+	public $data = array();
+
+	public function write($message, $error)
+	{
+		$this->data[] = array($message, $error);
+	}
+}
+
+////////////////////////////////////////
+
 class ClassWithOneAvailableMethod
 {
 	// Methods starting with a “_” should be ignored.
@@ -36,18 +73,42 @@ class ClassWithOneAvailableMethod
 	}
 }
 
-class MyLogger extends Tequila_Logger
+class MyTequilaModule extends Tequila_Module
 {
-	public $log = array();
-
-	protected function _log($message, $level)
+	public function __construct(Tequila $tequila)
 	{
-		$this->log[] = array($message, $level);
+		parent::__construct($tequila);
+	}
+
+	public function return_string()
+	{
+		return 'I don\'t want one position, I want all positions!';
+	}
+
+	public function start()
+	{
+		$this->_tequila->start();
+	}
+
+	public function stop()
+	{
+		$this->_tequila->stop();
+	}
+
+	public function require_arguments($one, $two, $three)
+	{}
+
+	public function throw_exception()
+	{
+		throw new Exception('Four stones, four crates, zero stones... ZERO CRATES!!!');
 	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @covers Tequila
+ */
 class TequilaTest extends PHPUnit_Framework_TestCase
 {
 	/**
@@ -66,17 +127,88 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 
 	protected function setUp()
 	{
-		$this->object = Tequila::create();
+		$this->object = new Tequila(
+			new MyClassLoader(),
+			new MyLogger(),
+			new MyReader(),
+			new MyWriter()
+		);
 	}
 
 	////////////////////////////////////////
 
-	public function testCreate()
+	public function testConstructor()
 	{
+		$this->assertInstanceOf('Tequila', $this->object);
+	}
+
+	//--------------------------------------
+
+	public function testDefaultConstructor()
+	{
+		$o = new Tequila();
+
+		$this->assertInstanceOf('Tequila_ClassLoader_Void', $o->class_loader);
+		$this->assertInstanceOf('Tequila_Logger_Void', $o->logger);
+		$this->assertInstanceOf('Tequila_Reader_Plain', $o->reader);
 		$this->assertInstanceOf(
-			extension_loaded('readline') ? 'Tequila_Readline' : 'Tequila_Plain',
-			$this->object
+			'Tequila_Writer_'.(extension_loaded('readline') ?
+			                   'Readline' :
+			                   'Plain'),
+			$o->writer
 		);
+	}
+
+	//--------------------------------------
+
+	public function getPropertyProvider()
+	{
+		return array(
+
+			'class_loader' =>
+			array('class_loader', true, new MyClassLoader(), null),
+
+			'is_running' =>
+			array('is_running', false, false, null),
+
+			'logger' =>
+			array('logger', true, new MyLogger(), null),
+
+			'reader' =>
+			array('reader', true, new MyReader(), null),
+
+			'user' =>
+			array('user', false, getenv('USER'), null),
+
+			'writer' =>
+			array('writer', true, new MyWriter(), null),
+
+			'unknown_property' =>
+			array('unknown_property', false, null, 'Tequila_Exception'),
+		);
+	}
+
+	/**
+	 * @dataProvider getPropertyProvider
+	 *
+	 * @param string      $name
+	 * @param boolean     $set_value
+	 * @param mixed       $value
+	 * @param string|null $exception
+	 */
+	public function testGetProperty($name, $set_value, $value, $exception)
+	{
+		if ($set_value)
+		{
+			$this->object->$name = $value;
+		}
+
+		if ($exception !== null)
+		{
+			$this->setExpectedException($exception);
+		}
+
+		$this->assertSame($value, $this->object->$name);
 	}
 
 	//--------------------------------------
@@ -93,7 +225,7 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 			array('class_loader', true,           false),
 			array('class_loader', new stdClass(), false),
 
-			array('class_loader', new Tequila_ClassLoader_Void(), true),
+			array('class_loader', new MyClassLoader(), true),
 
 			// The only correct value for $logger is a Tequila_Logger.
 			array('logger', null,           false),
@@ -102,7 +234,25 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 			array('logger', true,           false),
 			array('logger', new stdClass(), false),
 
-			array('logger', new Tequila_Logger_Void(), true),
+			array('logger', new MyLogger(), true),
+
+			// The only correct value for $reader is a Tequila_Reader.
+			array('reader', null,           false),
+			array('reader', 1337,           false),
+			array('reader', 'a string',     false),
+			array('reader', true,           false),
+			array('reader', new stdClass(), false),
+
+			array('reader', new MyReader(), true),
+
+			// The only correct value for $writer is a Tequila_Writer.
+			array('writer', null,           false),
+			array('writer', 1337,           false),
+			array('writer', 'a string',     false),
+			array('writer', true,           false),
+			array('writer', new stdClass(), false),
+
+			array('writer', new MyWriter(), true),
 
 			// Other properties are not settable.
 			array('is_running', true,        false),
@@ -132,9 +282,94 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 
 	//--------------------------------------
 
+	public function startProvider()
+	{
+		return array(
+
+			'Unspecified class' =>
+			array('', false),
+
+			'Unspecified method' =>
+			array(self::getNextClass(), false),
+
+			'No such method' =>
+			array(self::getNextClass().' inexistant_method', false),
+
+			'Not enough arguments' =>
+			array(self::getNextClass().' require_arguments', false),
+
+			'MyTequilaModule return_string' =>
+			array(self::getNextClass().' return_string', false),
+
+			'MyTequilaModule start' =>
+			array(self::getNextClass().' start', true),
+
+			'MyTequilaModule throw_exception' =>
+			array(self::getNextClass().' throw_exception', false),
+
+			'Reading error' =>
+			array(false, false),
+		);
+	}
+
+	/**
+	 * @dataProvider startProvider
+	 *
+	 * @param string  $command
+	 * @param boolean $exception
+	 */
+	public function testStart($command, $exception)
+	{
+		$this->object->class_loader->base = 'MyTequilaModule';
+		$this->object->reader->data[] = $command;
+
+		// Makes sure Tequila stops.
+		$this->object->reader->data[] = self::getNextClass().' stop';
+
+		$this->assertEmpty($this->object->writer->data);
+
+		if ($command === false)
+		{
+			// Reading error.
+			$expected = array('', false);
+		}
+		elseif ($exception)
+		{
+			// The method will try to start Tequila.
+			$expected = array('Tequila is already running', true);
+		}
+		else
+		{
+			try
+			{
+				$expected = array(
+					(string) $this->object->executeCommand($command),
+					false
+				);
+			}
+			catch (Tequila_Exception $e)
+			{
+				$expected = array($e->getMessage(), true);
+			}
+			catch (Exception $e)
+			{
+				$expected = array(get_class($e).': '.$e->getMessage(), true);
+			}
+		}
+
+		$this->object->start();
+
+		// data[0] is the prompt.
+		$result = $this->object->writer->data[1];
+		$result[0] = rtrim($result[0], PHP_EOL);
+
+		$this->assertSame($expected, $result);
+	}
+
+	//--------------------------------------
+
 	public function testGetAvailableMethods()
 	{
-		$this->object->class_loader = new MyClassLoader();
 		$this->object->class_loader->base = 'ClassWithOneAvailableMethod';
 
 		$methods = $this->object->getAvailableMethods(
@@ -226,7 +461,6 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 	 */
 	public function testGetMethod($method_name, $valid)
 	{
-		$this->object->class_loader = new MyClassLoader();
 		$this->object->class_loader->base = 'ClassWithOneAvailableMethod';
 
 		if (!$valid)
@@ -365,47 +599,84 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 
 	//--------------------------------------
 
+	public function testPrompt()
+	{
+		$prompt = 'Why did you judge me? Why did you judge me?';
+		$answer = 'You killed innocent people!';
+
+		$this->assertEmpty($this->object->writer->data);
+		$this->object->reader->data[] = $answer;
+
+		$this->assertSame($answer, $this->object->prompt($prompt));
+		$this->assertSame(array($prompt, false), $this->object->writer->data[0]);
+	}
+
+	//--------------------------------------
+
+	public function writeProvider()
+	{
+		return array(
+
+			'normal' =>
+			array('That boy is our last hope.', false),
+
+			'error' =>
+			array('No. There is another.', true),
+		);
+	}
 
 	/**
-	 * @todo Figure out how to test fwrite to STDOUT or STDERR.
+	 * @dataProvider writeProvider
 	 */
-	/* public function testWrite() */
-	/* { */
-	/* 	$string = 'This is a test string.'; */
-	/* 	$this->expectOutputString($string); */
+	public function testWrite($string, $error)
+	{
+		$logger = $this->object->logger;
+		$writer = $this->object->writer;
 
-	/* 	$logger = new MyLogger(); */
-	/* 	$this->object->logger = $logger; */
+		$this->assertEmpty($logger->log);
+		$this->assertEmpty($writer->data);
 
-	/* 	$this->assertEmpty($logger->log); */
+		$this->object->write($string, $error);
 
-	/* 	$this->object->write($string); */
-
-	/* 	$this->assertNotEmpty($logger->log); */
-	/* 	$this->assertSame(array($string, Tequila_Logger::NOTICE), */
-	/* 	                  $logger->log[0]); */
-	/* } */
+		$this->assertSame(
+			array(
+				$string,
+				$error ? Tequila_Logger::WARNING : Tequila_Logger::NOTICE
+			),
+			$logger->log[0]
+		);
+		$this->assertSame(array($string, $error), $writer->data[0]);
+	}
 
 	//--------------------------------------
 
 	public function parseConfigEntryProvider()
 	{
+		$user = getenv('USER');
+		$home = getenv('HOME');
+
 		return array(
 
-			// Simple entry.
+			'Simple entry' =>
 			array('This is a simple entry', 'This is a simple entry'),
 
-			// @USER@ variable.
-			array('My name is @USER@', 'My name is '.getenv('USER')),
+			'@USER@ variable' =>
+			array('My name is @USER@', 'My name is '.$user),
 
-			// Environment variable.
-			array('My home is @HOME@', 'My home is '.getenv('HOME')),
+			'Environment variable' =>
+			array('My home is @HOME@', 'My home is '.$home),
 
-			// Inexistant environment variable.
+			'Inexistant environment variable' =>
 			array('@INEXISTANT_VARIABLE@', '@INEXISTANT_VARIABLE@'),
 
-			// Malformed variable.
+			'Malformed variable' =>
 			array('@user@', '@user@'),
+
+			'Array' =>
+			array(
+				array('@USER@', '@HOME@'),
+				array($user,    $home)
+			),
 		);
 	}
 
@@ -418,31 +689,5 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 	public function testParseConfigEntry($origin, $result)
 	{
 		$this->assertSame($result, $this->object->parseConfigEntry($origin));
-	}
-
-	//--------------------------------------
-
-	public function testAddToHistory()
-	{
-		$string = 'These aren\'t the droids you\'re looking for.';
-
-		$this->assertEmpty($this->object->history);
-
-		$this->object->addToHistory($string);
-
-		$this->assertNotEmpty($this->object->history);
-		$this->assertSame($string, $this->object->history[0]);
-	}
-
-	//--------------------------------------
-
-	public function testClearHistory()
-	{
-		$string = 'These aren\'t the droids we\'re looking for.';
-
-		$this->object->addToHistory($string);
-		$this->object->clearHistory();
-
-		$this->assertEmpty($this->object->history);
 	}
 }

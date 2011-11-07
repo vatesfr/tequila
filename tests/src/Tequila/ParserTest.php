@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * @covers Tequila_Parser
+ */
 class Tequila_ParserTest extends PHPUnit_Framework_TestCase
 {
 	protected $object;
@@ -18,6 +21,40 @@ class Tequila_ParserTest extends PHPUnit_Framework_TestCase
 		$this->assertTrue($this->object->is_complete);
 
 		$this->assertEmpty($this->object->words);
+	}
+
+	//--------------------------------------
+
+	public function getPropertyProvider()
+	{
+		return array(
+
+			'is_complete' =>
+			array('is_complete', true, null),
+
+			'words' =>
+			array('words', array(), null),
+
+			'unknown_property' =>
+			array('unknown_property', null, 'Tequila_Exception'),
+		);
+	}
+
+	/**
+	 * @dataProvider getPropertyProvider
+	 *
+	 * @param string      $name
+	 * @param mixed       $value
+	 * @param string|null $exception
+	 */
+	public function testGetProperty($name, $value, $exception)
+	{
+		if ($exception !== null)
+		{
+			$this->setExpectedException($exception);
+		}
+
+		$this->assertSame($value, $this->object->$name);
 	}
 
 	//--------------------------------------

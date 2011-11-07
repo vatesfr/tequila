@@ -19,26 +19,6 @@
  */
 final class Tequila_Parser
 {
-	/**
-	 * Helper which returns an array of every words in the string if the parsing
-	 * is complete otherwise false.
-	 *
-	 * @param string $string
-	 *
-	 * @return array|false
-	 */
-	public static function parseString($string)
-	{
-		$parser = new self();
-
-		if ($parser->parse($string) === false)
-		{
-			return false;
-		}
-
-		return $parser->words;
-	}
-
 	public function __construct()
 	{
 		$this->reset();
