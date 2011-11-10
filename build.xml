@@ -1,0 +1,141 @@
+<project name="tequila" default="build">
+
+  <property environment="env" />
+  <condition property="env.WORKSPACE" value="">
+    <not>
+      <isset property="env.WORKSPACE" />
+    </not>
+  </condition>
+  <property name="pear" value="/usr/bin" />
+
+  <property name="build" value="${basedir}/build" />
+  <property name="logs" value="${basedir}/logs" />
+  <property name="source" value="${basedir}/src" />
+  <property name="tests" value="${basedir}/tests" />
+
+  <target name="clean">
+	<delete dir="${build}/api"/>
+	<delete dir="${build}/code-browser"/>
+	<delete dir="${build}/coverage"/>
+	<delete dir="${logs}"/>
+	<delete dir="${build}/pdepend"/>
+
+	<mkdir dir="${build}/api"/>
+	<mkdir dir="${build}/code-browser"/>
+	<mkdir dir="${build}/coverage"/>
+	<mkdir dir="${build}/docs"/>
+	<mkdir dir="${logs}"/>
+	<mkdir dir="${build}/pdepend"/>
+  </target>
+
+  <target name="phpmd" description="Generation pmd.xml utilisation PHPMD">
+	<exec executable="${pear}/phpmd">
+	  <arg value="${source}/" />
+	  <arg value="xml" />
+	  <arg value="${build}/phpmd.xml" />
+	  <arg value="--reportfile" />
+	  <arg value="${logs}/pmd.xml" />
+	  <arg value="--suffixes" />
+	  <arg value="php,inc" />
+	</exec>
+  </target>
+
+  <target name="phpunit"
+		  description="Tests Unitaires avec PHPUnit generation junit.xml and clover.xml">
+	<exec executable="${pear}/phpunit" failonerror="false">
+	  <arg value="--configuration" />
+	  <arg value="${build}/phpunit.xml" />
+	  <arg value="--bootstrap" />
+	  <arg value="${tests}/bootstrap.php" />
+	  <arg value="--log-junit" />
+	  <arg value="${logs}/junit.xml" />
+	  <arg value="--coverage-clover" />
+	  <arg value="${logs}/clover.xml" />
+	</exec>
+  </target>
+
+  <target name="pdepend"
+		  description="Generate jdepend.xml and software metrics charts using PHP_Depend">
+	<exec executable="${pear}/pdepend">
+	  <arg value="--jdepend-xml=${logs}/jdepend.xml" />
+	  <arg value="--jdepend-chart=${build}/pdepend/dependencies.svg" />
+	  <arg value="--overview-pyramid=${build}/pdepend/overview-pyramid.svg" />
+	  <arg value="--suffix=php,inc" />
+	  <arg path="${source}" />
+	</exec>
+  </target>
+
+  <target name="phpcpd"
+		  description="Generate pmd-cpd.xml using PHPCPD">
+	<exec executable="${pear}/phpcpd">
+	  <arg value="--suffixes" />
+	  <arg value="php,inc" />
+	  <arg value="--log-pmd" />
+	  <arg value="${logs}/pmd-cpd.xml" />
+	  <arg path="${source}" />
+	</exec>
+  </target>
+
+  <target name="phploc"
+		  description="Generate phploc.csv">
+	<exec executable="${pear}/phploc">
+	  <arg value="--suffixes" />
+	  <arg value="php,inc" />
+	  <arg value="--exclude" />
+	  <arg value="Fv/tests" />
+	  <arg value="--log-csv" />
+	  <arg value="${logs}/phploc.csv" />
+	  <arg path="${source}" />
+	</exec>
+  </target>
+
+  <target name="phpcs"
+		  description="Generate checkstyle.xml using PHP_CodeSniffer">
+	<exec executable="${pear}/phpcs" output="/dev/null">
+	  <arg value="--report=checkstyle" />
+	  <arg value="--report-file=${logs}/checkstyle.xml" />
+	  <arg value="--standard=${build}/phpcs.xml" />
+	  <arg value="--extensions=php,inc" />
+	  <arg path="${source}" />
+	</exec>
+  </target>
+
+  <target name="phpdoc"
+		  description="Generate API documentation using PHPDocumentor">
+	<exec executable="${pear}/phpdoc">
+	  <arg value="--quiet" />
+	  <arg value="--directory" />
+	  <arg path="${source}" />
+	  <arg value="--target" />
+	  <arg path="${build}/api" />
+	</exec>
+  </target>
+
+  <target name="phpcb"
+		  description="Aggregate tool output with PHP_CodeBrowser">
+	<exec executable="${pear}/phpcb">
+	  <arg value="--log=${logs}" />
+	  <arg value="--source=${source}" />
+	  <arg value="--output=${build}/code-browser" />
+	  <arg value="--ignore=${build},${basedir}/libs,${tests},/usr/share/php5" />
+	</exec>
+  </target>
+
+  <target name="parallelTasks"
+		  description="Run pdepend, phpmd, phpcpd, phpcs, phpdoc and phploc with 2 parallel tasks.">
+	<parallel threadCount="2">
+	  <sequential>
+		<antcall target="pdepend"/>
+		<antcall target="phpmd"/>
+	  </sequential>
+	  <antcall target="phpcpd"/>
+	  <antcall target="phpcs"/>
+	  <antcall target="phpdoc"/>
+	  <antcall target="phploc"/>
+	  <antcall target="phpunit"/>
+	</parallel>
+  </target>
+
+  <target name="build" depends="clean,parallelTasks,phpcb"/>
+
+</project>
