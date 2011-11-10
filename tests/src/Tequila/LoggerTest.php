@@ -97,7 +97,9 @@ class Tequila_LoggerTest extends PHPUnit_Framework_TestCase
 			$tmp[] = array(null, $level);
 		}
 
-		$configurations = call_user_func_array('self::cartesianProduct', $tmp);
+		$configurations = call_user_func_array(
+			__CLASS__.'::cartesianProduct', $tmp
+		);
 
 		$data = array();
 

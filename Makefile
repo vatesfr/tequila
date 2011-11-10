@@ -7,7 +7,7 @@ TESTS_DIR ?= tests
 ################################################################################
 
 PHPDOC  ?= phpdoc
-PHPUNIT ?= phpunit
+PHPUNIT ?= phpunit --colors --coverage-text --testdox
 
 MKDIR := mkdir --parents --
 RMDIR := rmdir --parents --ignore-fail-on-non-empty --

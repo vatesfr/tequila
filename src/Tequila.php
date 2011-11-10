@@ -50,13 +50,9 @@ class Tequila
 		{
 			$this->reader = $reader;
 		}
-		elseif (extension_loaded('readline'))
-		{
-			$this->reader = new Tequila_Reader_Readline();
-		}
 		else
 		{
-			$this->reader = new Tequila_Reader_Plain();
+			$this->reader = Tequila_Reader::factory();
 		}
 
 		if ($writer !== null)

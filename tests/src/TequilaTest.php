@@ -151,13 +151,13 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 
 		$this->assertInstanceOf('Tequila_ClassLoader_Void', $o->class_loader);
 		$this->assertInstanceOf('Tequila_Logger_Void', $o->logger);
-		$this->assertInstanceOf('Tequila_Reader_Plain', $o->reader);
 		$this->assertInstanceOf(
-			'Tequila_Writer_'.(extension_loaded('readline') ?
+			'Tequila_Reader_'.(extension_loaded('readline') ?
 			                   'Readline' :
 			                   'Plain'),
-			$o->writer
+			$o->reader
 		);
+		$this->assertInstanceOf('Tequila_Writer_Plain', $o->writer);
 	}
 
 	//--------------------------------------

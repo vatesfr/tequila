@@ -17,4 +17,23 @@ abstract class Tequila_Reader
 	 *                          (for advanced feature such as completion).
 	 */
 	abstract public function read(Tequila $tequila);
+
+	/**
+	 * Creates  a Tequila_Reader  depending  whether the  Readline extension  is
+	 * loaded or not.
+	 *
+	 * Because  this code  is platform  dependent, the  code coverage  cannot be
+	 * complete, to avoid this problem we deliberately ignore it.
+	 *
+	 * @codeCoverageIgnore
+	 */
+	public static function factory()
+	{
+		if (extension_loaded('readline'))
+		{
+			return new Tequila_Reader_Readline();
+		}
+
+		return new Tequila_Reader_Plain();
+	}
 }
