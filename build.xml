@@ -43,8 +43,6 @@
   <target name="phpunit"
 		  description="Tests Unitaires avec PHPUnit generation junit.xml and clover.xml">
 	<exec executable="${pear}/phpunit" failonerror="false">
-	  <arg value="--configuration" />
-	  <arg value="${build}/phpunit.xml" />
 	  <arg value="--bootstrap" />
 	  <arg value="${tests}/bootstrap.php" />
 	  <arg value="--log-junit" />
