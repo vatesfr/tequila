@@ -48,6 +48,7 @@ doc:
 install:
 	$(MKDIR) $(datadir)
 	cp -r $(SRC_DIR)/* $(datadir)/
+	$(MKDIR) $(bindir)
 	ln -s --target-directory=$(bindir) $(datadir)/tequila
 	$(MKDIR) $(confdir)
 	cp config.ini $(confdir)
