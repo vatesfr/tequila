@@ -49,6 +49,7 @@
 	  <arg value="${logs}/junit.xml" />
 	  <arg value="--coverage-clover" />
 	  <arg value="${logs}/clover.xml" />
+	  <arg value="${tests}" />
 	</exec>
   </target>
 
