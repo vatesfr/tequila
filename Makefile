@@ -6,7 +6,7 @@ TESTS_DIR ?= tests
 
 ################################################################################
 
-PHPDOC  ?= phpdoc
+PHPDOC  ?= phpdoc --sourcecode
 PHPUNIT ?= phpunit --colors --coverage-text --testdox
 
 MKDIR := mkdir --parents --
@@ -44,8 +44,7 @@ distcheck:
 
 doc:
 	$(PHPDOC) --directory $(SRC_DIR),$(TESTS_DIR) --target $(docdir)\
-		--defaultpackagename $(PROJECT) --sourcecode\
-			| awk /WARNING/
+		--defaultpackagename $(PROJECT) | awk /WARNING/
 
 install:
 	$(MKDIR) $(datadir)

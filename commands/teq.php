@@ -5,6 +5,8 @@
  *
  * It can  be used  as a demonstration  and a  reference of the  flexibility and
  * abilities of Tequila.
+ *
+ * @author Julien Fontanet <julien.fontanet@isonoe.net>
  */
 class teq extends Tequila_Module
 {
