@@ -3,6 +3,9 @@
  * @author Julien Fontanet <julien.fontanet@isonoe.net>
  */
 
+/**
+ * Dummy logger used for testing.
+ */
 class MyLogger2 extends Tequila_Logger
 {
 	public $data = array();

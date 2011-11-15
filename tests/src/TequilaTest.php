@@ -1,4 +1,8 @@
 <?php
+/**
+ * @author Julien Fontanet <julien.fontanet@isonoe.net>
+ */
+
 
 /**
  * This class loader creates any demanded class.

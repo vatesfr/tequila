@@ -43,7 +43,9 @@ distcheck:
 	$(PHPUNIT) --bootstrap $(TESTS_DIR)/bootstrap.php $(TESTS_DIR)
 
 doc:
-	$(PHPDOC) --directory $(SRC_DIR) --target $(docdir) --defaultpackagename $(PROJECT) --sourcecode
+	$(PHPDOC) --directory $(SRC_DIR),$(TESTS_DIR) --target $(docdir)\
+		--defaultpackagename $(PROJECT) --sourcecode\
+			| awk /WARNING/
 
 install:
 	$(MKDIR) $(datadir)

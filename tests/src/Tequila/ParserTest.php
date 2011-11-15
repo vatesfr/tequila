@@ -1,4 +1,7 @@
 <?php
+/**
+ * @author Julien Fontanet <julien.fontanet@isonoe.net>
+ */
 
 /**
  * @covers Tequila_Parser
