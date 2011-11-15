@@ -2,6 +2,8 @@
 
 /**
  * This is the base class for Tequila modules.
+ *
+ * @author Julien Fontanet <julien.fontanet@isonoe.net>
  */
 class Tequila_Module
 {

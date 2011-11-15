@@ -1,4 +1,7 @@
 <?php
+/**
+ * @author Julien Fontanet <julien.fontanet@isonoe.net>
+ */
 
 class MyLogger2 extends Tequila_Logger
 {
@@ -134,7 +137,7 @@ class Tequila_LoggerTest extends PHPUnit_Framework_TestCase
 	 * @param integer $configuration The current configuration of the logger.
 	 * @param integer $level         The level of the message.
 	 */
-	public function test_log($enabled, $configuration, $level)
+	public function testLog($enabled, $configuration, $level)
 	{
 		$string = 'Stop trying to hit me and hit me!';
 

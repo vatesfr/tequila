@@ -5,6 +5,8 @@
  *
  * Due to the implementation, it is currently non testable.
  *
+ * @author Julien Fontanet <julien.fontanet@isonoe.net>
+ *
  * @codeCoverageIgnore
  */
 class Tequila_Reader_Plain extends Tequila_Reader

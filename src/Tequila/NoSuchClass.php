@@ -1,6 +1,8 @@
 <?php
 
 /**
+ * @author Julien Fontanet <julien.fontanet@isonoe.net>
+ *
  * @codeCoverageIgnore
  */
 final class Tequila_NoSuchClass extends Tequila_Exception

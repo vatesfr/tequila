@@ -15,6 +15,8 @@
  *
  * The parser is able to parse multiple strings in the same session.
  *
+ * @author Julien Fontanet <julien.fontanet@isonoe.net>
+ *
  * @property-read array $words The words found during the parsing.
  */
 final class Tequila_Parser

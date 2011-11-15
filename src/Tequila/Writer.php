@@ -6,6 +6,8 @@
  *
  * This class provides no implementations, there is nothing to test.
  *
+ * @author Julien Fontanet <julien.fontanet@isonoe.net>
+ *
  * @codeCoverageIgnore
  */
 abstract class Tequila_Writer

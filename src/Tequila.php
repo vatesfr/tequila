@@ -3,6 +3,8 @@
 /**
  * This is Tequila's main class (obviously).
  *
+ * @author Julien Fontanet <julien.fontanet@isonoe.net>
+ *
  * @property Tequila_ClassLoader $class_loader
  * @property Tequila_Logger      $logger
  * @property Tequila_Reader      $reader

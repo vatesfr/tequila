@@ -1,5 +1,8 @@
 #!/usr/bin/env php
 <?php
+/**
+ * @author Julien Fontanet <julien.fontanet@isonoe.net>
+ */
 
 $_Tequila_dir = defined('__DIR__') ? __DIR__ : dirname(__FILE__);
 

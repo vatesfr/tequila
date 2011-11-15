@@ -1,7 +1,7 @@
 <?php
 
 /**
- *
+ * @author Julien Fontanet <julien.fontanet@isonoe.net>
  */
 abstract class Tequila_Logger
 {
@@ -28,19 +28,15 @@ abstract class Tequila_Logger
 	 */
 	static public function getLevelName($level)
 	{
-		switch ($level)
+		static $map = null;
+
+		if ($map === null)
 		{
-		case self::DEBUG:
-			return 'DEBUG';
-		case self::NOTICE:
-			return 'NOTICE';
-		case self::WARNING:
-			return 'WARNING';
-		case self::FATAL:
-			return 'FATAL';
+			$class = new ReflectionClass(__CLASS__);
+			$map = array_flip($class->getConstants());
 		}
 
-		return '';
+		return (isset($map[$level]) ? $map[$level] : '');
 	}
 
 	/**

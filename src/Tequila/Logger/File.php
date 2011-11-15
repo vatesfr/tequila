@@ -3,6 +3,8 @@
 /**
  * This logger stores the data in a file.
  *
+ * @author Julien Fontanet <julien.fontanet@isonoe.net>
+ *
  * @property string $file
  */
 class Tequila_Logger_File extends Tequila_Logger

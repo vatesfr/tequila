@@ -2,6 +2,8 @@
 
 /**
  * This class loader relies on Gallic_Loader.
+ *
+ * @author Julien Fontanet <julien.fontanet@isonoe.net>
  */
 class Tequila_ClassLoader_Gallic extends Tequila_ClassLoader
 {
