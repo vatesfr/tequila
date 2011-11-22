@@ -21,6 +21,12 @@
  * @package Gallic
  */
 
+/**
+ * This  is  not  really  a  part  of  Tequila, there  are  no  unit  tests,  as
+ * a consequence we ignore the code coverage analysis.
+ */
+// @codeCoverageIgnoreStart
+
 final class Gallic
 {
 	const VERSION = '0.2.0';
@@ -202,3 +208,5 @@ final class Gallic_Loader
 	private function __clone() {}
 }
 spl_autoload_register(array('Gallic_Loader', 'autoload'));
+
+// @codeCoverageIgnoreEnd
