@@ -10,6 +10,7 @@
  * @property Tequila_Reader      $reader
  * @property Tequila_Writer      $writer
  *
+ * @property-read array   $history
  * @property-read boolean $is_running
  * @property-read string  $user
  */
@@ -75,6 +76,7 @@ class Tequila
 		switch ($name)
 		{
 		case 'class_loader':
+		case 'history':
 		case 'is_running':
 		case 'logger':
 		case 'reader':
@@ -312,6 +314,8 @@ class Tequila
 			throw new Tequila_UnspecifiedClass();
 		}
 
+		$this->_history[] = $command;
+
 		if ($n === 1)
 		{
 			throw new Tequila_UnspecifiedMethod($entries[0]);
@@ -359,8 +363,6 @@ class Tequila
 
 	public function prompt($prompt)
 	{
-		$this->write($prompt);
-
 		return $this->_reader->read($this);
 	}
 
@@ -416,6 +418,7 @@ class Tequila
 
 	private
 		$_class_loader,
+		$_history        = array(),
 		$_is_running     = false,
 		$_loaded_classes = array(), // Used for security purposes.
 		$_logger,
