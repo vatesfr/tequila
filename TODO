@@ -1,2 +1,8 @@
 - multi-line parsing
-- print a message when the result of a method is null.
+
+- print a message when the result of a method is null
+
+- “bootstrap” configuration entry which indicates which PHP file to load before
+  Tequila initialization.
+
+- improve and test the “teq” command.
