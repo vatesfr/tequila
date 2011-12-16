@@ -6,9 +6,15 @@
 
 $_Tequila_dir = defined('__DIR__') ? __DIR__ : dirname(__FILE__);
 
+set_include_path(implode(PATH_SEPARATOR, array(
+	'/usr/share/php5/lib',
+	'/usr/share/php',
+	$_Tequila_dir.'/../libs/gallic/src',
+)));
+
 if (!class_exists('Gallic'))
 {
-	require $_Tequila_dir.'/Gallic.php';
+	require 'Gallic.php';
 }
 Gallic::$include_dirs[] = $_Tequila_dir;
 

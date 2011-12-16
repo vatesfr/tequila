@@ -47,6 +47,7 @@ doc:
 		--defaultpackagename $(PROJECT) | awk /WARNING/
 
 install:
+	$(MAKE) -C libs/gallic install
 	$(MKDIR) $(datadir)
 	cp -r $(SRC_DIR)/* $(datadir)/
 	$(MKDIR) $(bindir)
