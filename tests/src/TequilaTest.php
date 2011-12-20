@@ -34,8 +34,10 @@ class MyReader extends Tequila_Reader
 {
 	public $data = array();
 
-	public function read(Tequila $tequila)
+	public function read(Tequila $tequila, $prompt)
 	{
+		$tequila->write($prompt);
+
 		if (empty($this->data))
 		{
 			return false;

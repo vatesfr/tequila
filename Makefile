@@ -7,7 +7,7 @@ TESTS_DIR ?= tests
 ################################################################################
 
 PHPDOC  ?= phpdoc --sourcecode
-PHPUNIT ?= phpunit --colors --coverage-text --testdox
+PHPUNIT ?= phpunit --colors
 
 MKDIR := mkdir --parents --
 RMDIR := rmdir --parents --ignore-fail-on-non-empty --
@@ -28,19 +28,23 @@ docdir  ?= $(docrootdir)/$(PROJECT)
 ################################################################################
 
 .DEFAULT_GOAL: all
-.PHONY: all distcheck doc install
+.PHONY: all codecoverage distcheck doc install
 .SILENT:
 
 all:
 	echo 'Nothing to compile!'
 	echo
 	echo 'Available commands:'
+	echo '- codecoverage'
 	echo '- distcheck'
 	echo '- doc'
 	echo '- install'
 
+codecoverage:
+	$(PHPUNIT) --bootstrap $(TESTS_DIR)/bootstrap.php --coverage-text $(TESTS_DIR)
+
 distcheck:
-	$(PHPUNIT) --bootstrap $(TESTS_DIR)/bootstrap.php $(TESTS_DIR)
+	$(PHPUNIT) --bootstrap $(TESTS_DIR)/bootstrap.php --verbose -- $(TESTS_DIR)
 
 doc:
 	$(PHPDOC) --directory $(SRC_DIR),$(TESTS_DIR) --target $(docdir)\

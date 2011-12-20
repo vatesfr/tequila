@@ -363,7 +363,7 @@ class Tequila
 
 	public function prompt($prompt)
 	{
-		return $this->_reader->read($this);
+		return $this->_reader->read($this, $prompt);
 	}
 
 	/**

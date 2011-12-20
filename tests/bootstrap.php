@@ -3,9 +3,16 @@
  * @author Julien Fontanet <julien.fontanet@isonoe.net>
  */
 
-$dir = dirname(__FILE__).'/../src';
+$dir = defined('__DIR__') ? __DIR__ : dirname(__FILE__);
 
-require $dir.'/Gallic.php';
+set_include_path(implode(PATH_SEPARATOR, array(
+	'/usr/share/php5/lib',
+	'/usr/share/php',
+	$dir.'/../libs/gallic/src',
+)));
+require 'Gallic.php';
+
+Gallic::$include_dirs[] = $dir.'/../src';
 Gallic::$include_dirs[] = $dir;
 
 unset($dir);

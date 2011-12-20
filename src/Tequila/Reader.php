@@ -17,8 +17,10 @@ abstract class Tequila_Reader
 	 *
 	 * @param Tequila  $tequila The Tequila instance which  requires the reading
 	 *                          (for advanced feature such as completion).
+	 * @param string   $prompt  This string  is the prompt associated  with this
+	 *                          reading.
 	 */
-	abstract public function read(Tequila $tequila);
+	abstract public function read(Tequila $tequila, $prompt);
 
 	/**
 	 * Creates  a Tequila_Reader  depending  whether the  Readline extension  is
