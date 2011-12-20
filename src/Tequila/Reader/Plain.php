@@ -13,7 +13,7 @@ class Tequila_Reader_Plain extends Tequila_Reader
 {
 	public function read(Tequila $tequila, $prompt)
 	{
-		$tequila->write($tequila, $prompt);
+		$tequila->write($prompt);
 		return fgets(STDIN);
 	}
 }
