@@ -9,6 +9,13 @@ class Tequila_Reader_Readline extends Tequila_Reader
 {
 	public function read(Tequila $tequila, $prompt)
 	{
-		return readline($prompt);
+		$result = readline($prompt);
+
+		if (trim($result) !== '')
+		{
+			readline_add_history($result);
+		}
+
+		return $result;
 	}
 }
