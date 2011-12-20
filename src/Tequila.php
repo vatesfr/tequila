@@ -165,7 +165,7 @@ class Tequila
 
 				if ($result !== null)
 				{
-					$this->writeln($result);
+					$this->writeln(self::_prettyPrint($result));
 				}
 			}
 			catch (Tequila_Exception $e)
@@ -438,5 +438,40 @@ class Tequila
 
 		// If no matches: no replacements.
 		return ($value !== false ? $value : $matches[0]);
+	}
+
+	/**
+	 * @return string
+	 */
+	private static function _prettyPrint($value, $indent = '')
+	{
+		$next_indent = $indent.'    ';
+
+		if (is_array($value))
+		{
+			$str =
+				'Array('.count($value).')'.PHP_EOL.
+				$indent.'{'.PHP_EOL;
+			foreach ($value as $key => $entry)
+			{
+				$str .=
+					$next_indent.self::_prettyPrint($key).' => '.
+					self::_prettyPrint($entry, $next_indent).','.PHP_EOL;
+
+			}
+			return ($str.$indent.'}');
+		}
+
+		if (is_bool($value))
+		{
+			return ($value ? 'true' : 'false');
+		}
+
+		if (is_null($value))
+		{
+			return 'null';
+		}
+
+		return var_export($value, true);
 	}
 }
