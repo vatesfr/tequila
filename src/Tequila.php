@@ -165,7 +165,7 @@ class Tequila
 
 				if ($result !== null)
 				{
-					$this->writeln(self::_prettyPrint($result));
+					$this->writeln(self::prettyFormat($result));
 				}
 			}
 			catch (Tequila_Exception $e)
@@ -416,6 +416,49 @@ class Tequila
 		);
 	}
 
+	/**
+	 * Format the given value to a nice, easily readable format.
+	 *
+	 * @param string $indent
+	 *
+	 * @return string
+	 */
+	public static function prettyFormat($value, $indent = '')
+	{
+		$next_indent = $indent.'    ';
+
+		if (is_array($value))
+		{
+			$str =
+				'array // Size: '.count($value).''.PHP_EOL.
+				$indent.'('.PHP_EOL;
+			foreach ($value as $key => $entry)
+			{
+				$str .=
+					$next_indent.self::prettyFormat($key).' => '.
+					self::prettyFormat($entry, $next_indent).','.PHP_EOL;
+
+			}
+			return ($str.$indent.')');
+		}
+
+		if (is_bool($value))
+		{
+			return ($value ? 'true' : 'false');
+		}
+
+		if (is_null($value))
+		{
+			return 'null';
+		}
+
+		if (is_object($value) && method_exists($value, '__toString'))
+		{
+			return str_replace(PHP_EOL, PHP_EOL.$indent, $value->__toString());
+		}
+
+		return var_export($value, true);
+	}
 	private
 		$_class_loader,
 		$_history        = array(),
@@ -438,40 +481,5 @@ class Tequila
 
 		// If no matches: no replacements.
 		return ($value !== false ? $value : $matches[0]);
-	}
-
-	/**
-	 * @return string
-	 */
-	private static function _prettyPrint($value, $indent = '')
-	{
-		$next_indent = $indent.'    ';
-
-		if (is_array($value))
-		{
-			$str =
-				'Array('.count($value).')'.PHP_EOL.
-				$indent.'{'.PHP_EOL;
-			foreach ($value as $key => $entry)
-			{
-				$str .=
-					$next_indent.self::_prettyPrint($key).' => '.
-					self::_prettyPrint($entry, $next_indent).','.PHP_EOL;
-
-			}
-			return ($str.$indent.'}');
-		}
-
-		if (is_bool($value))
-		{
-			return ($value ? 'true' : 'false');
-		}
-
-		if (is_null($value))
-		{
-			return 'null';
-		}
-
-		return var_export($value, true);
 	}
 }

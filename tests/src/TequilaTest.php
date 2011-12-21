@@ -349,7 +349,7 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 			try
 			{
 				$expected = array(
-					(string) $this->object->executeCommand($command),
+					Tequila::prettyFormat($this->object->executeCommand($command)),
 					false
 				);
 			}
