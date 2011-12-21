@@ -78,6 +78,14 @@ class ClassWithOneAvailableMethod
 	}
 }
 
+class MyPrintableObject
+{
+	public function __toString()
+	{
+		return __CLASS__;
+	}
+}
+
 class MyTequilaModule extends Tequila_Module
 {
 	public function __construct(Tequila $tequila)
@@ -88,6 +96,17 @@ class MyTequilaModule extends Tequila_Module
 	public function return_string()
 	{
 		return 'I don\'t want one position, I want all positions!';
+	}
+
+	public function return_complex()
+	{
+		return array(
+			null,
+			true,
+			1,
+			'string',
+			new MyPrintableObject(),
+		);
 	}
 
 	public function start()
@@ -306,6 +325,9 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 
 			'MyTequilaModule return_string' =>
 			array(self::getNextClass().' return_string', false),
+
+			'MyTequilaModule return_complex' =>
+			array(self::getNextClass().' return_complex', false),
 
 			'MyTequilaModule start' =>
 			array(self::getNextClass().' start', true),
