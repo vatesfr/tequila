@@ -1,148 +1,206 @@
 <?php
 
 /**
- * An instance of this class is able to split a string into multiple words.
+ * This parser splits a string into multiple entries.
  *
- * A word  is delimited by whitespaces  unless the whitespaces  are escaped with
- * the “\” character or the part containing whitespace is quoted.
+ * Entries can be either NULL or strings.
  *
- * All of the following are considered as words:
- * - word_without_space
- * - word\ with\ spaces\ escaped
- * - "quoted word"
- * - "quoted word containg a \" "
- * - more" "complex\ word" with special \\ and \""
+ * There is two types of strings:
+ * - interpolated  strings where  some sequences  have a  special  meanings (see
+ *   “Escape sequences” list);
+ * - raw strings.
  *
- * The parser is able to parse multiple strings in the same session.
+ * Interpolated strings can be:
+ * - quoted with “"”;
+ * - naked (non quoted).
+ *
+ * Escape sequences:
+ * - \n: New line
+ * - \r: Carriage return
+ * - \t: Tabulation
+ * - \\: Backslash itself
+ * - \": Quote (only for quoted strings)
+ * - \ : Space (only for naked strings)
+ *
+ * A raw string begins with a “%” followed by a delimiter character which can be
+ * anything excepts alphanumeric, whitespace  and control characters. The string
+ * ends with  the same  character except for  the opening  “(”, “[”, “{”  or “<”
+ * where  it ends with  the closing  character (respectively  “)”, “]”,  “}” and
+ * “>”). Please, note that matching pairs inside the string are ignored.
+ *
+ * Grammar:
+ *
+ *   cmdline = [ whitespaces ] { entry % whitespaces } [ whitespaces ]
+ *   entry   = null | naked_str | quoted_str | raw_str
+ *
+ *   whitespaces  = regex(\s+)
+ *   null         = regex(/null/i)
+ *   naked_str    = *escaped sequence*
+ *   quoted_str   = '"' *escaped sequence* '"'
+ *   raw_str      = '%' start_delim characters end_delim
  *
  * @author Julien Fontanet <julien.fontanet@isonoe.net>
- *
- * @property-read array $words The words found during the parsing.
  */
 final class Tequila_Parser
 {
-	public function __construct()
+	public function parse($s)
 	{
-		$this->reset();
+		$this->_s = $s;
+
+		$this->_i = 0;
+		$this->_n = strlen($this->_s);
+
+		return $this->_cmdline();
 	}
 
-	public function __get($name)
+	//--------------------------------------
+
+	private function _regex($re)
 	{
-		switch ($name)
-		{
-		case 'is_complete':
-			return !($this->_escaped || $this->_quoted);
-		case 'words':
-			$name = '_'.$name;
-			return $this->$name;
-		}
-
-		throw new Tequila_Exception(
-			'Getting incorrect property: '.__CLASS__.'::'.$name
-		);
-	}
-
-	/**
-	 * Parses a string into an array of words.
-	 *
-	 * If the parsing is incomplete, the  user can call this function again with
-	 * another string which will complete it.
-	 *
-	 * @param string $string
-	 *
-	 * @return boolean Whether the parsing  is complete, i.e. quoted strings are
-	 *                 properly closed.
-	 */
-	public function parse($string)
-	{
-		foreach (str_split($string) as $letter)
-		{
-			if ($this->_escaped)
-			{
-				$this->_escaped = false;
-				$this->_word .= $letter;
-				continue;
-			}
-
-			if ($letter === '\\')
-			{
-				$this->_escaped = true;
-				continue;
-			}
-
-			if ($this->_quoted)
-			{
-				if ($letter === '"')
-				{
-					$this->_quoted = false;
-
-					// Even if the current word is empty, it is meaningful.
-					$this->_in_word = true;
-				}
-				else
-				{
-					$this->_word .= $letter;
-				}
-				continue;
-			}
-
-			if ($letter === '"')
-			{
-				$this->_quoted = true;
-				continue;
-			}
-
-			if (($letter === ' ') || ($letter === "\n"))
-			{
-				$this->_push_word();
-			}
-			else
-			{
-				$this->_word .= $letter;
-			}
-		}
-
-		if ($this->_escaped || $this->_quoted)
+		if (!preg_match($re.'A', $this->_s, $match, 0, $this->_i))
 		{
 			return false;
 		}
 
-		$this->_push_word();
-
-		return true;
+		$this->_i += strlen($match[0]);
+		return $match;
 	}
 
-	/**
-	 * Resets the  internal state  of the  parser, i.e. to  start a  new parsing
-	 * session.
-	 */
-	public function reset()
-	{
-		$this->_escaped = false;
-		$this->_quoted  = false;
-		$this->_in_word = false;
-		$this->_word    = '';
-		$this->_words   = array();
-	}
+	//--------------------------------------
 
-	private
-		$_escaped,
-		$_quoted,
-		$_in_word,
-		$_word,
-		$_words;
-
-	/**
-	 * If the current word is meaningful adds it to the list of words.
-	 */
-	private function _push_word()
+	private function _cmdline()
 	{
-		if ($this->_in_word || ($this->_word !== ''))
+		$this->_whitespaces();
+
+		$entries = array();
+		while (($e = $this->_entry()) !== false)
 		{
-			$this->_words[] = $this->_word;
-			$this->_word = '';
+			$entries[] = $e;
 
-			$this->_in_word = false;
+			$this->_whitespaces();
 		}
+
+		// Everything was not parsed.
+		if ($this->_i < $this->_n)
+		{
+			return false;
+		}
+
+		return $entries;
+	}
+
+	private function _entry()
+	{
+		($e = $this->_null()) !== false
+			or ($e = $this->_nakedStr()) !== false
+			or ($e = $this->_quotedStr()) !== false
+			or $e = $this->_rawStr();
+
+		return $e;
+	}
+
+	private function _whitespaces()
+	{
+		return (boolean) $this->_regex('/\\s+/');
+	}
+
+	private function _null()
+	{
+		if ($this->_regex('/null/i'))
+		{
+			return null;
+		}
+
+		return false;
+	}
+
+	private function _nakedStr()
+	{
+		if ($match = $this->_regex('/[^"%](?:[^\\s\\\\]+|(?:\\\\.))+/'))
+		{
+			return $this->_parseString($match[0], ' ');
+		}
+
+		return false;
+	}
+
+	private function _quotedStr()
+	{
+		if ($match = $this->_regex('/"((?:[^"\\\\]+|(?:\\\\.))*)"/'))
+		{
+			return $this->_parseString($match[1], '"');
+		}
+
+		return false;
+	}
+
+	private function _rawStr()
+	{
+		// Save current position.
+		$cursor = $this->_i;
+
+		if (!($match = $this->_regex('/%([^[:alnum:][:cntrl:][:space:]])/')))
+		{
+			return false;
+		}
+
+		$pairs = array(
+			'(' => ')',
+			'[' => ']',
+			'{' => '}',
+			'<' => '>',
+		);
+		$sd = $match[1];
+		$ed = preg_quote(isset($pairs[$sd]) ? $pairs[$sd] : $sd, '/');
+		$sd = preg_quote($sd, '/');
+
+		if ($match = $this->_regex('/((?:[^'.$sd.$ed.']+|'.$sd.'(?1)'.$ed.')*)'.$ed.'/'))
+		{
+			return $match[1];
+		}
+
+		// No match, restore position.
+		$this->_i = $cursor;
+		return false;
+	}
+
+	//--------------------------------------
+
+	private function _parseString($str, $delimiter = null)
+	{
+		$codes = array(
+			'n' => "\n",
+			'r' => "\r",
+			't' => "\t",
+			'\\' => '\\',
+			'"' => '"',
+		);
+
+		if ($delimiter)
+		{
+			$codes[$delimiter] = $delimiter;
+		}
+
+		$str = str_split($str);
+		$result = array();
+		$escaped = false;
+		foreach ($str as $c)
+		{
+			if ($escaped)
+			{
+				$result[] = (isset($codes[$c]) ? $codes[$c] : '\\'.$c);
+				$escaped = false;
+			}
+			elseif ($c === '\\')
+			{
+				$escaped = true;
+			}
+			else
+			{
+				$result[] = $c;
+			}
+		}
+
+		return implode($result);
 	}
 }

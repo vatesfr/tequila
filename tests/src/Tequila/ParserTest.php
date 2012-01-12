@@ -20,44 +20,6 @@ class Tequila_ParserTest extends PHPUnit_Framework_TestCase
 	public function testConstructor()
 	{
 		$this->assertInstanceOf('Tequila_Parser', $this->object);
-
-		$this->assertTrue($this->object->is_complete);
-
-		$this->assertEmpty($this->object->words);
-	}
-
-	//--------------------------------------
-
-	public function getPropertyProvider()
-	{
-		return array(
-
-			'is_complete' =>
-			array('is_complete', true, null),
-
-			'words' =>
-			array('words', array(), null),
-
-			'unknown_property' =>
-			array('unknown_property', null, 'Tequila_Exception'),
-		);
-	}
-
-	/**
-	 * @dataProvider getPropertyProvider
-	 *
-	 * @param string      $name
-	 * @param mixed       $value
-	 * @param string|null $exception
-	 */
-	public function testGetProperty($name, $value, $exception)
-	{
-		if ($exception !== null)
-		{
-			$this->setExpectedException($exception);
-		}
-
-		$this->assertSame($value, $this->object->$name);
 	}
 
 	//--------------------------------------
@@ -66,35 +28,56 @@ class Tequila_ParserTest extends PHPUnit_Framework_TestCase
 	{
 		return array(
 
-			// Simple parsing.
+			'empty' =>
+			array('', array()),
+
+			'whitespaces' =>
+			array(" \n\t\r", array()),
+
+			'null' =>
+			array('null', array(null)),
+
+			'quoted string' =>
 			array(
-				'really simple parsing',
-				array('really', 'simple', 'parsing')
+				'"quoted string with escaped characters \n\t\r\\\\\\""',
+				array("quoted string with escaped characters \n\t\r\\\"")
 			),
 
-			// Quoted string.
-			array('a "quoted string"', array('a', 'quoted string')),
-
-			// Quoted substring.
-			array('a quote"d substring"', array('a', 'quoted substring')),
-
-			// Escaped characters.
+			'raw string' =>
 			array(
-				'lots\\ of \\"escaped" characters\\"" \\\\',
-				array('lots of', '"escaped characters"', '\\')
+				'%(raw string \n\t\r\\\\)',
+				array('raw string \n\t\r\\\\')
 			),
 
-			// Incomplete parsing due to a missing escaped character.
-			array('incomplete entry 1 \\', null),
-
-			// Incomplete parsing due to a not closed string.
-			array('incomplete entry 2 "', null),
-
-			// Multiple passes parsing.
+			'raw strings with various delimiters' =>
 			array(
-				array('a\ multiple\\', ' passes"', ' parsing"'),
-				'a multiple passes parsing'
+				'%(who) %[what] %{where} %<how> %|why|',
+				array('who', 'what', 'where', 'how', 'why')
 			),
+
+			'alaphanumeric delimiter for raw string' =>
+			array(
+				'%Aalphanumeric characters cannot be used as delimitersA',
+				false
+			),
+
+			'space delimiter for raw string' =>
+			array(
+				'% alphanumeric characters cannot be used as delimiters ',
+				false
+			),
+
+			'naked string' =>
+			array(
+				'naked\ string\ \n\t\r\\\\\\"',
+				array("naked string \n\t\r\\\"")
+			),
+
+			'non terminated quoted string' =>
+			array('"invalid quoted string', false),
+
+			'non terminated raw string' =>
+			array('%(invalid raw string', false),
 		);
 	}
 
@@ -103,39 +86,11 @@ class Tequila_ParserTest extends PHPUnit_Framework_TestCase
 	 *
 	 * @dataProvider parseProvider
 	 */
-	public function testParse($strings, $result)
+	public function testParse($string, $result)
 	{
-		$strings = (array) $strings;
-
-		foreach ($strings as $string)
-		{
-			$this->object->parse($string);
-		}
-
-		if ($result === null)
-		{
-			$this->assertFalse($this->object->is_complete);
-			return;
-		}
-
-		$result = (array) $result;
-
-		$this->assertTrue($this->object->is_complete);
-		$this->assertSame($result, $this->object->words);
-	}
-
-	//--------------------------------------
-
-	public function testReset()
-	{
-		$this->object->parse('first_word "\\');
-
-		$this->assertFalse($this->object->is_complete);
-		$this->assertNotEmpty($this->object->words);
-
-		$this->object->reset();
-
-		$this->assertTrue($this->object->is_complete);
-		$this->assertEmpty($this->object->words);
+		$this->assertSame(
+			$result,
+			$this->object->parse($string)
+		);
 	}
 }

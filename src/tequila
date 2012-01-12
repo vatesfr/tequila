@@ -7,9 +7,9 @@
 $_Tequila_dir = defined('__DIR__') ? __DIR__ : dirname(__FILE__);
 
 set_include_path(implode(PATH_SEPARATOR, array(
+	$_Tequila_dir.'/../libs/gallic/src',
 	'/usr/share/php5/lib',
 	'/usr/share/php',
-	$_Tequila_dir.'/../libs/gallic/src',
 )));
 
 if (!class_exists('Gallic'))

@@ -301,14 +301,11 @@ class Tequila
 	{
 		$command = rtrim($command, "\n");
 
-		// TODO: handle multi-line parsing.
 		$parser = new Tequila_Parser();
-		$parser->parse($command);
-		$entries = $parser->words;
+		$entries = $parser->parse($command);
 
 		// Nothing significant has been entered.
-		if (!$parser->is_complete ||
-		    ($entries === false) ||
+		if (($entries === false) ||
 		    (($n = count($entries)) === 0))
 		{
 			throw new Tequila_UnspecifiedClass();
