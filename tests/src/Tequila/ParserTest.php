@@ -73,6 +73,9 @@ class Tequila_ParserTest extends PHPUnit_Framework_TestCase
 				array("naked string \n\t\r\\\"")
 			),
 
+			'one character naked string' =>
+			array('_', array('_')),
+
 			'non terminated quoted string' =>
 			array('"invalid quoted string', false),
 
