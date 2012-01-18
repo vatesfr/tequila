@@ -348,7 +348,19 @@ class Tequila
 
 		if ($class->isSubclassOf('Tequila_Module'))
 		{
-			$object = $class->newInstance($this);
+			/*
+			 * Tequila  modules  are  instanciated  through  the  static  method
+			 * “_factory($tequila, $class_name)”.
+			 */
+			$object = call_user_func(array($class_name, '_factory'),
+			                         $this, $class_name);
+
+			if (!($object instanceof $class_name))
+			{
+				throw new Tequila_Exception(
+					'Tequila module instanciation failed: '.$class_name
+				);
+			}
 		}
 		else
 		{
@@ -456,6 +468,7 @@ class Tequila
 
 		return var_export($value, true);
 	}
+
 	private
 		$_class_loader,
 		$_history        = array(),
