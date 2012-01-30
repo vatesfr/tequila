@@ -10,7 +10,7 @@ class MyClassLoader extends Tequila_ClassLoader
 {
 	public $base;
 
-	public function load($class_name)
+	function load($class_name)
 	{
 		eval('class '.$class_name.
 		     ($this->base !== null ? ' extends '.$this->base : '').
@@ -34,7 +34,7 @@ class MyReader extends Tequila_Reader
 {
 	public $data = array();
 
-	public function read(Tequila $tequila, $prompt)
+	function read(Tequila $tequila, $prompt)
 	{
 		$tequila->write($prompt);
 
@@ -51,7 +51,7 @@ class MyWriter extends Tequila_Writer
 {
 	public $data = array();
 
-	public function write($message, $error)
+	function write($message, $error)
 	{
 		$this->data[] = array($message, $error);
 	}
@@ -62,8 +62,8 @@ class MyWriter extends Tequila_Writer
 class ClassWithOneAvailableMethod
 {
 	// Methods starting with a “_” should be ignored.
-	public function __construct() {}
-	public function _public_method() {}
+	function __construct() {}
+	function _public_method() {}
 
 	// Protected and private methods should be ignored.
 	protected function protected_method() {}
@@ -72,7 +72,7 @@ class ClassWithOneAvailableMethod
 	private function _private_method() {}
 
 	// This method should be visible.
-	public function public_method($mandatory, $optional = null)
+	function public_method($mandatory, $optional = null)
 	{
 		return array($optional, $mandatory);
 	}
@@ -80,7 +80,7 @@ class ClassWithOneAvailableMethod
 
 class MyPrintableObject
 {
-	public function __toString()
+	function __toString()
 	{
 		return __CLASS__;
 	}
@@ -88,17 +88,12 @@ class MyPrintableObject
 
 class MyTequilaModule extends Tequila_Module
 {
-	public function __construct(Tequila $tequila)
-	{
-		parent::__construct($tequila);
-	}
-
-	public function return_string()
+	function return_string()
 	{
 		return 'I don\'t want one position, I want all positions!';
 	}
 
-	public function return_complex()
+	function return_complex()
 	{
 		return array(
 			null,
@@ -109,20 +104,20 @@ class MyTequilaModule extends Tequila_Module
 		);
 	}
 
-	public function start()
+	function start()
 	{
 		$this->_tequila->start();
 	}
 
-	public function stop()
+	function stop()
 	{
 		$this->_tequila->stop();
 	}
 
-	public function require_arguments($one, $two, $three)
+	function require_arguments($one, $two, $three)
 	{}
 
-	public function throw_exception()
+	function throw_exception()
 	{
 		throw new Exception('Four stones, four crates, zero stones... ZERO CRATES!!!');
 	}
@@ -139,7 +134,7 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 	/**
 	 * Returns the name of the next class to be generated.
 	 */
-	public static function getNextClass()
+	static function getNextClass()
 	{
 		return 'myClass'.(self::$_id++);
 	}
@@ -162,14 +157,14 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 
 	////////////////////////////////////////
 
-	public function testConstructor()
+	function testConstructor()
 	{
 		$this->assertInstanceOf('Tequila', $this->object);
 	}
 
 	//--------------------------------------
 
-	public function testDefaultConstructor()
+	function testDefaultConstructor()
 	{
 		$o = new Tequila();
 
@@ -186,7 +181,7 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 
 	//--------------------------------------
 
-	public function getPropertyProvider()
+	function getPropertyProvider()
 	{
 		return array(
 
@@ -221,7 +216,7 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 	 * @param mixed       $value
 	 * @param string|null $exception
 	 */
-	public function testGetProperty($name, $set_value, $value, $exception)
+	function testGetProperty($name, $set_value, $value, $exception)
 	{
 		if ($set_value)
 		{
@@ -238,7 +233,7 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 
 	//--------------------------------------
 
-	public function setPropertyProvider()
+	function setPropertyProvider()
 	{
 		return array(
 
@@ -295,7 +290,7 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 	 * @param mixed   $value
 	 * @param boolean $valid Whether or not the given value is valid.
 	 */
-	public function testSetProperty($name, $value, $valid)
+	function testSetProperty($name, $value, $valid)
 	{
 		if (!$valid)
 		{
@@ -307,7 +302,7 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 
 	//--------------------------------------
 
-	public function startProvider()
+	function startProvider()
 	{
 		return array(
 
@@ -346,7 +341,7 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 	 * @param string  $command
 	 * @param boolean $exception
 	 */
-	public function testStart($command, $exception)
+	function testStart($command, $exception)
 	{
 		$this->object->class_loader->base = 'MyTequilaModule';
 		$this->object->reader->data[] = $command;
@@ -396,7 +391,7 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 
 	//--------------------------------------
 
-	public function testGetAvailableMethods()
+	function testGetAvailableMethods()
 	{
 		$this->object->class_loader->base = 'ClassWithOneAvailableMethod';
 
@@ -410,7 +405,7 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 
 	//--------------------------------------
 
-	public function getClassProvider()
+	function getClassProvider()
 	{
 		$cl_no  = new Tequila_ClassLoader_Void(); // Always fails.
 		$cl_yes = new MyClassLoader();            // Always succeed.
@@ -442,8 +437,8 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 	 * @param boolean             $valid        Whether  or  not  the  class  is
 	 *                                          retrieved correctly.
 	 */
-	public function testGetClass(Tequila_ClassLoader $class_loader, $class_name,
-	                             $valid)
+	function testGetClass(Tequila_ClassLoader $class_loader, $class_name,
+	                      $valid)
 	{
 		if (!$valid)
 		{
@@ -458,7 +453,7 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 
 	//--------------------------------------
 
-	public function getMethodProvider()
+	function getMethodProvider()
 	{
 		return array(
 
@@ -487,7 +482,7 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 	 * @param string  $method_name
 	 * @param boolean $valid
 	 */
-	public function testGetMethod($method_name, $valid)
+	function testGetMethod($method_name, $valid)
 	{
 		$this->object->class_loader->base = 'ClassWithOneAvailableMethod';
 
@@ -506,7 +501,7 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 
 	//--------------------------------------
 
-	public function executeCommandProvider()
+	function executeCommandProvider()
 	{
 		$cl_no  = new Tequila_ClassLoader_Void(); // Always fails.
 		$cl_yes = new MyClassLoader();            // Always succeed.
@@ -552,8 +547,8 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 	 * @param mixed               $result
 	 * @param string|null         $exception
 	 */
-	public function testExecuteCommand(Tequila_ClassLoader $class_loader,
-	                                   $command, $result, $exception)
+	function testExecuteCommand(Tequila_ClassLoader $class_loader, $command,
+	                            $result, $exception)
 	{
 		if ($exception !== null)
 		{
@@ -567,7 +562,7 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 
 	//--------------------------------------
 
-	public function executeProvider()
+	function executeProvider()
 	{
 		$cl_no  = new Tequila_ClassLoader_Void(); // Always fails.
 		$cl_yes = new MyClassLoader();            // Always succeed.
@@ -608,8 +603,8 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 	 * @param mixed               $result
 	 * @param string|null         $exception
 	 */
-	public function testExecute(Tequila_ClassLoader $class_loader, $class_name,
-	                            $method_name, $arguments, $result, $exception)
+	function testExecute(Tequila_ClassLoader $class_loader, $class_name,
+	                     $method_name, $arguments, $result, $exception)
 	{
 		if ($exception !== null)
 		{
@@ -627,7 +622,7 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 
 	//--------------------------------------
 
-	public function testPrompt()
+	function testPrompt()
 	{
 		$prompt = 'Why did you judge me? Why did you judge me?';
 		$answer = 'You killed innocent people!';
@@ -641,7 +636,7 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 
 	//--------------------------------------
 
-	public function writeProvider()
+	function writeProvider()
 	{
 		return array(
 
@@ -656,7 +651,7 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 	/**
 	 * @dataProvider writeProvider
 	 */
-	public function testWrite($string, $error)
+	function testWrite($string, $error)
 	{
 		$logger = $this->object->logger;
 		$writer = $this->object->writer;
@@ -678,7 +673,7 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 
 	//--------------------------------------
 
-	public function parseConfigEntryProvider()
+	function parseConfigEntryProvider()
 	{
 		$user = getenv('USER');
 		$home = getenv('HOME');
@@ -714,7 +709,7 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 	 * @param string $origin
 	 * @param string $result
 	 */
-	public function testParseConfigEntry($origin, $result)
+	function testParseConfigEntry($origin, $result)
 	{
 		$this->assertSame($result, $this->object->parseConfigEntry($origin));
 	}

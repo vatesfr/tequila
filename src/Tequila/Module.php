@@ -32,7 +32,7 @@ class Tequila_Module
 		return new $class($tequila);
 	}
 
-	function __construct(Tequila $tequila)
+	protected function __construct(Tequila $tequila)
 	{
 		$this->_tequila = $tequila;
 	}
