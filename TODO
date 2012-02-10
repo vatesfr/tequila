@@ -6,3 +6,7 @@
   Tequila initialization.
 
 - improve and test the “teq” command.
+
+- In case of PHP errors, logs it and displays a short explanation to the user.
+
+- Should we use “var_export()” to display the returned result of commands?
