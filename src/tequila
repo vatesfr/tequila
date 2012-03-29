@@ -54,3 +54,9 @@ $tequila = new Tequila();
 loadConfig(parse_ini_file('/etc/tequila/config.ini'), $tequila);
 
 $tequila->start();
+
+/*
+ * Local Variables:
+ * mode: php
+ * End:
+ */

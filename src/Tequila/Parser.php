@@ -40,9 +40,20 @@
  *   raw_str      = '%' start_delim characters end_delim
  *
  * @author Julien Fontanet <julien.fontanet@isonoe.net>
+ *
+ * @todo Add comments support.
+ * @todo Maybe add booleans (true/false/yes/no).
  */
 final class Tequila_Parser
 {
+	/**
+	 * Tries to parse a given string.
+	 *
+	 * @param string $s
+	 *
+	 * @return string[]|false Returns the found entries or false if the parsing
+	 *     failed.
+	 */
 	public function parse($s)
 	{
 		$this->_s = $s;

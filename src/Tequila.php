@@ -263,7 +263,7 @@ class Tequila
 	 */
 	public function getMethod(ReflectionClass $class, $method_name)
 	{
-		if ($method_name[0] === '_')
+		if (empty($method_name) || ($method_name[0] === '_'))
 		{
 			throw new Tequila_NoSuchMethod($class->getName(), $method_name);
 		}
