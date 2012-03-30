@@ -10,9 +10,10 @@
  * @property Tequila_Reader      $reader
  * @property Tequila_Writer      $writer
  *
- * @property-read array   $history
- * @property-read boolean $is_running
- * @property-read string  $user
+ * @property-read array          $history
+ * @property-read boolean        $is_running
+ * @property-read string         $user
+ * @property-read Tequila_Parser $parser
  */
 class Tequila
 {
@@ -37,7 +38,7 @@ class Tequila
 		}
 		else
 		{
-			$this->class_loader = new Tequila_ClassLoader_Void();
+			$this->class_loader = new Tequila_ClassLoader_Void;
 		}
 
 		if ($logger !== null)
@@ -46,7 +47,7 @@ class Tequila
 		}
 		else
 		{
-			$this->logger = new Tequila_Logger_Void();
+			$this->logger = new Tequila_Logger_Void;
 		}
 
 		if ($reader !== null)
@@ -64,8 +65,10 @@ class Tequila
 		}
 		else
 		{
-			$this->writer = new Tequila_Writer_Plain();
+			$this->writer = new Tequila_Writer_Plain;
 		}
+
+		$this->_parser = new Tequila_Parser;
 	}
 
 	/**
@@ -82,8 +85,7 @@ class Tequila
 		case 'reader':
 		case 'user':
 		case 'writer':
-			$name = '_'.$name;
-			return $this->$name;
+			return $this->{'_'.$name};
 		}
 
 		throw new Tequila_Exception(
@@ -162,11 +164,6 @@ class Tequila
 			try
 			{
 				$result = $this->executeCommand($string);
-
-				if ($result !== null)
-				{
-					$this->writeln(self::prettyFormat($result));
-				}
 			}
 			catch (Tequila_Exception $e)
 			{
@@ -286,6 +283,8 @@ class Tequila
 	}
 
 	/**
+	 * Executes a given command.
+	 *
 	 * @param string $command
 	 *
 	 * @return mixed The result of the executed method.
@@ -299,27 +298,15 @@ class Tequila
 	 */
 	public function executeCommand($command)
 	{
-		$command = rtrim($command, "\n");
-
-		$parser = new Tequila_Parser();
-		$entries = $parser->parse($command);
-
-		// Nothing significant has been entered.
-		if (($entries === false) ||
-		    (($n = count($entries)) === 0))
+		$result = $this->parseCommand($command);
+		if (!$result)
 		{
 			throw new Tequila_UnspecifiedClass();
 		}
 
-		$this->_history[] = $command;
+		list($class, $method, $args) = $result;
 
-		if ($n === 1)
-		{
-			throw new Tequila_UnspecifiedMethod($entries[0]);
-		}
-
-		return $this->execute($entries[0], $entries[1],
-		                      array_slice($entries, 2));
+		return $this->execute($class, $method, $args);
 	}
 
 	/**
@@ -367,7 +354,51 @@ class Tequila
 			$object = $class->newInstance();
 		}
 
-		return $method->invokeArgs($object, $arguments);
+		$result = $method->invokeArgs($object, $arguments);
+
+		if ($result !== null)
+		{
+			$this->writeln(self::prettyFormat($result));
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Parses a command.
+	 *
+	 * @param string $command
+	 *
+	 * @return (string,string,mixed[])|false An array containing the class, the
+	 *     method and the arguments or false if the command was empty.
+	 *
+	 * @param throws Tequila_UnspecifiedMethod If no method was specified.
+	 */
+	public function parseCommand($command)
+	{
+		$command = rtrim($command, PHP_EOL);
+
+		$entries = $this->_parser->parse($command);
+
+		// Nothing significant has been entered.
+		if (($entries === false) ||
+		    (($n = count($entries)) === 0))
+		{
+			return false;
+		}
+
+		$this->_history[] = $command;
+
+		if ($n === 1)
+		{
+			throw new Tequila_UnspecifiedMethod($entries[0]);
+		}
+
+		return array(
+			$entries[0],             // class
+			$entries[1],             // method
+			array_slice($entries, 2) // arguments
+		);
 	}
 
 	public function prompt($prompt)
@@ -438,9 +469,7 @@ class Tequila
 
 		if (is_array($value))
 		{
-			$str =
-				'array // Size: '.count($value).''.PHP_EOL.
-				$indent.'('.PHP_EOL;
+			$str = 'array (// Size: '.count($value).''.PHP_EOL;
 			foreach ($value as $key => $entry)
 			{
 				$str .=
@@ -461,12 +490,15 @@ class Tequila
 			return 'null';
 		}
 
-		if (is_object($value) && method_exists($value, '__toString'))
+		if (is_string($value)
+		    || (is_object($value) && method_exists($value, '__toString')))
 		{
-			return str_replace(PHP_EOL, PHP_EOL.$indent, $value->__toString());
+			// Protect quotes and antislashes and wraps with quotes.
+			return "'".preg_replace('/(?=[\\\\\'])/', '\\', (string) $value)."'";
 		}
 
-		return var_export($value, true);
+		// Indents correctly.
+		return preg_replace('/\r\n?|\n\r?/', '$0'.$indent, var_export($value, true));
 	}
 
 	private
@@ -475,6 +507,7 @@ class Tequila
 		$_is_running     = false,
 		$_loaded_classes = array(), // Used for security purposes.
 		$_logger,
+		$_parser,
 		$_reader,
 		$_user,
 		$_writer;

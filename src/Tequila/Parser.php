@@ -30,8 +30,9 @@
  *
  * Grammar:
  *
- *   cmdline = [ whitespaces ] { entry % whitespaces } [ whitespaces ]
+ *   cmdline = [ whitespaces ] { entry [ whitespaces ] } [ comment ]
  *   entry   = null | naked_str | quoted_str | raw_str
+ *   comment = '#' *anything*
  *
  *   whitespaces  = regex(\s+)
  *   null         = regex(/null/i)
@@ -91,6 +92,8 @@ final class Tequila_Parser
 			$this->_whitespaces();
 		}
 
+		$this->_comment();
+
 		// Everything was not parsed.
 		if ($this->_i < $this->_n)
 		{
@@ -110,6 +113,11 @@ final class Tequila_Parser
 		return $e;
 	}
 
+	private function _comment()
+	{
+		return (boolean) $this->_regex('/#.*/');
+	}
+
 	private function _whitespaces()
 	{
 		return (boolean) $this->_regex('/\\s+/');
@@ -127,7 +135,7 @@ final class Tequila_Parser
 
 	private function _nakedStr()
 	{
-		if ($match = $this->_regex('/[^"%](?:[^\\s\\\\]+|(?:\\\\.))*/'))
+		if ($match = $this->_regex('/[^"%#](?:[^\\s\\\\]+|(?:\\\\.))*/'))
 		{
 			return $this->_parseString($match[0], ' ');
 		}

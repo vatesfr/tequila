@@ -1,12 +1,14 @@
 <?php
 
 /**
+ * @author Julien Fontanet <julien.fontanet@isonoe.net>
+ */
+
+/**
  * This class contains various useful commands/methods for the Tequila Shell.
  *
  * It can  be used  as a demonstration  and a  reference of the  flexibility and
  * abilities of Tequila.
- *
- * @author Julien Fontanet <julien.fontanet@isonoe.net>
  */
 class teq extends Tequila_Module
 {
@@ -65,13 +67,13 @@ class teq extends Tequila_Module
 		$n = 1 + (int) log(count($history), 10);
 		foreach ($history as $command)
 		{
-			echo str_pad($i, $n), ' ', $command, PHP_EOL;
+			$this->_tequila->writeln(str_pad($i, $n).' '.$command);
 			++$i;
 		}
 	}
 
 	/**
-	 *
+	 * Writes all its arguments on different lines.
 	 */
 	public function writeln()
 	{
@@ -90,98 +92,4 @@ class teq extends Tequila_Module
 		$this->_tequila->writeln('Bye!');
 		$this->_tequila->stop();
 	}
-
-	//--------------------------------------
-
-	/**
-	 * @param string $file
-	 *
-	 * @todo Mutualise some code with Tequila::start() and
-	 *     Tequila::executeCommand().
-	 */
-	public function startRecord($file)
-	{
-		$this->_recording = true;
-
-		$handle = @fopen($file, 'w');
-
-		if ($handle === false)
-		{
-			$this->_tequila->writeln('Failed to open: '.$file, true);
-			return;
-		}
-
-		do {
-			$string = $this->_tequila->prompt('recording> ');
-
-			// Reading error.
-			if ($string === false)
-			{
-				$this->_tequila->writeln();
-				$this->stopRecord();
-
-				return;
-			}
-
-			try
-			{
-				$result = $this->_tequila->executeCommand($string);
-
-				fwrite($handle, $string);
-
-				if ($result !== null)
-				{
-					$this->_tequila->writeln(self::prettyFormat($result));
-				}
-			}
-			catch (Tequila_Exception $e)
-			{
-				$this->_tequila->writeln($e->getMessage(), true);
-			}
-			catch (Exception $e)
-			{
-				$this->_tequila->writeln(get_class($e).': '.$e->getMessage(), true);
-			}
-		} while ($this->_recording);
-
-		fclose($handle);
-	}
-
-	public function stopRecord()
-	{
-		$this->_recording = false;
-	}
-
-	/**
-	 * @param string $file
-	 *
-	 * @todo Add a verbose mode and only diplay commands in this mode.
-	 */
-	public function play($file)
-	{
-		$handle = @fopen($file, 'r');
-
-		if ($handle === false)
-		{
-			$this->_tequila->writeln('Failed to open: '.$file, true);
-			return;
-		}
-
-		while (($line = fgets($handle)) !== false)
-		{
-			$line = rtrim(ltrim($line), PHP_EOL);
-
-			$this->_tequila->writeln();
-			$this->_tequila->writeln('>> '.$line);
-
-			$this->_tequila->executeCommand($line);
-		}
-
-		fclose($handle);
-	}
-
-	/**
-	 *
-	 */
-	private $_recording = false;
 }
