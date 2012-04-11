@@ -349,8 +349,6 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 		// Makes sure Tequila stops.
 		$this->object->reader->data[] = self::getNextClass().' stop';
 
-		$this->assertEmpty($this->object->writer->data);
-
 		if ($command === false)
 		{
 			// Reading error.
@@ -379,6 +377,8 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 				$expected = array(get_class($e).': '.$e->getMessage(), true);
 			}
 		}
+
+		$this->object->writer->data = array();
 
 		$this->object->start();
 

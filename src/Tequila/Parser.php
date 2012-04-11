@@ -52,8 +52,8 @@ final class Tequila_Parser
 	 *
 	 * @param string $s
 	 *
-	 * @return string[]|false Returns the found entries or false if the parsing
-	 *     failed.
+	 * @return (string|null)[]|false Returns the found entries or false if the
+	 *     parsing failed.
 	 */
 	public function parse($s)
 	{

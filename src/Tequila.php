@@ -163,7 +163,7 @@ class Tequila
 
 			try
 			{
-				$result = $this->executeCommand($string);
+				$this->executeCommand($string);
 			}
 			catch (Tequila_Exception $e)
 			{

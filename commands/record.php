@@ -92,6 +92,7 @@ final class record extends Tequila_Module
 					$result = preg_replace('/^/m', '# ', $result).PHP_EOL;
 				}
 
+				// @todo even if it is only a comment, records it.
 				fwrite($handle, $command.PHP_EOL.$result.PHP_EOL);
 			}
 			catch (_record_stop $e)
