@@ -1,12 +1,13 @@
 - multi-line parsing
 
-- print a message when the result of a method is null
-
-- “bootstrap” configuration entry which indicates which PHP file to load before
-  Tequila initialization.
-
 - improve and test the “teq” command.
 
-- In case of PHP errors, logs it and displays a short explanation to the user.
+- In case of PHP errors, logs it and displays a short explanation to the user. (done?)
 
-- Should we use “var_export()” to display the returned result of commands?
+- Provides an alias system.
+
+- Case insensitive classes loading.
+
+- Case insensitive for commands?
+
+- Null command.

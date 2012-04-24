@@ -78,6 +78,7 @@ final class record extends Tequila_Module
 			// Reading error.
 			if ($command === false)
 			{
+				$this->_tequila->stop();
 				break;
 			}
 

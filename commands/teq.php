@@ -10,7 +10,7 @@
  * It can  be used  as a demonstration  and a  reference of the  flexibility and
  * abilities of Tequila.
  */
-class teq extends Tequila_Module
+final class teq extends Tequila_Module
 {
 	/**
 	 * When called with  one argument, lists the available  commands for a given

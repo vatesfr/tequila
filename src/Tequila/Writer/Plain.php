@@ -10,8 +10,11 @@
  *
  * @codeCoverageIgnore
  */
-class Tequila_Writer_Plain extends Tequila_Writer
+final class Tequila_Writer_Plain extends Tequila_Writer
 {
+	/**
+	 * @see parent::write()
+	 */
 	public function write($string, $error)
 	{
 		fwrite($error ? STDERR : STDOUT, $string);
