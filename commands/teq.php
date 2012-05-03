@@ -92,4 +92,11 @@ final class teq extends Tequila_Module
 		$this->_tequila->writeln('Bye!');
 		$this->_tequila->stop();
 	}
+
+	/**
+	 * This command does strictly nothing and may be used to write recordable
+	 * comments.
+	 */
+	public function C()
+	{}
 }

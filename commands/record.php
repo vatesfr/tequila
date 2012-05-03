@@ -40,7 +40,16 @@ final class _record_writer extends Tequila_Writer
  * This exception is used to stops the recording.
  */
 final class _record_stop extends Exception
-{}
+{
+	public function __construct()
+	{
+		/*
+		 * This message will be shown if the exception is not catched, ie. there
+		 * is no current recording session.
+		 */
+		parent::__construct('we are not recording');
+	}
+}
 
 /**
  * This module provides a recording system which allows one to record a bunch of
@@ -140,6 +149,11 @@ final class record extends Tequila_Module
 			return;
 		}
 
+		$orw = $this->_tequila->writer; // Original writer.
+		$myw = new _record_writer;      // My writer.
+
+		$this->_tequila->writer = $myw;
+
 		while (($line = fgets($handle)) !== false)
 		{
 			$line = rtrim(ltrim($line), PHP_EOL);
@@ -149,16 +163,30 @@ final class record extends Tequila_Module
 				continue;
 			}
 
-			$this->_tequila->writeln('>>> '.$line);
+			$orw->write($line.PHP_EOL, false);
 
 			try
 			{
 				$this->_tequila->executeCommand($line);
+
+				if ($result = rtrim($myw->pop(), PHP_EOL))
+				{
+					$result = preg_replace('/^/m', '# ', $result).PHP_EOL;
+				}
+
+				$orw->write($result.PHP_EOL, false);
 			}
 			catch (Tequila_UnspecifiedClass $e)
 			{}
+			catch (Exception $e)
+			{
+				$this->_tequila->writer = $orw;
+				throw $e;
+			}
 		}
 
 		fclose($handle);
+
+		$this->_tequila->writer = $orw;
 	}
 }
