@@ -11,3 +11,5 @@
 - Case insensitive for commands?
 
 - Null command.
+
+- Adds a debug mode which prints exceptions stack trace.
