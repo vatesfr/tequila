@@ -304,6 +304,8 @@ class Tequila
 			throw new Tequila_UnspecifiedClass();
 		}
 
+		$this->_history[] = $command;
+
 		list($class, $method, $args) = $result;
 
 		return $this->execute($class, $method, $args);
@@ -386,8 +388,6 @@ class Tequila
 		{
 			return false;
 		}
-
-		$this->_history[] = $command;
 
 		if ($n === 1)
 		{
