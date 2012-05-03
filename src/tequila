@@ -18,8 +18,6 @@ if (!class_exists('Gallic'))
 }
 Gallic::$include_dirs[] = $_Tequila_dir;
 
-unset($_Tequila_dir);
-
 ////////////////////////////////////////////////////////////////////////////////
 
 function loadConfig(array $config, Tequila $tequila)
@@ -51,7 +49,17 @@ function loadConfig(array $config, Tequila $tequila)
 
 $tequila = new Tequila();
 
-loadConfig(parse_ini_file('/etc/tequila/config.ini'), $tequila);
+// First, tries to find the config file in the current directory.
+if (is_file($_Tequila_dir.'/config.ini'))
+{
+	loadConfig(parse_ini_file($_Tequila_dir.'/config.ini'), $tequila);
+}
+else
+{
+	loadConfig(parse_ini_file('/etc/tequila/config.ini'), $tequila);
+}
+
+unset($_Tequila_dir);
 
 $tequila->start();
 
