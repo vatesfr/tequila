@@ -13,3 +13,5 @@
 - Null command.
 
 - Adds a debug mode which prints exceptions stack trace.
+
+- Catches as much as possible, data written by commands (output bufferring).
