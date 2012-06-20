@@ -19,4 +19,9 @@ abstract class Tequila_Writer
 	 * @param boolean $error Whether it is an error message.
 	 */
 	abstract public function write($string, $error);
+
+        final public function writeln($string, $error)
+        {
+            $this->write($string . PHP_EOL, $error);
+        }
 }
