@@ -37,5 +37,9 @@ class Tequila_Module
 		$this->_tequila = $tequila;
 	}
 
+        /**
+         *
+         * @var Tequila
+         */
 	protected $_tequila;
 }

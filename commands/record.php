@@ -61,13 +61,25 @@ final class record extends Tequila_Module
 	 * Starts recording commands.
 	 *
 	 * @param string $file
+         * @param string $mode 'w' for truncating the file at srecord start, 'a' for adding record at the end of file.
+         * 'w' by default.
 	 *
 	 * @todo Mutualise some code with Tequila::start() and
 	 *     Tequila::executeCommand().
 	 */
-	public function start($file)
+	public function start($file, $mode = NULL)
 	{
-		$handle = @fopen($file, 'w');
+                if ($mode === NULL)
+                {
+                    $mode = 'w';
+                }
+
+                if ($mode !== 'a' && $mode !== 'w')
+                {
+                    throw new Tequila_Exception('Record mdoe must be \'w\' for overwriting(default) or \'a\' for adding');
+                }
+
+		$handle = @fopen($file, $mode);
 
 		if ($handle === false)
 		{
