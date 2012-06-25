@@ -103,21 +103,36 @@ final class teq extends Tequila_Module
 
     }
 
+    /**
+     * Prints the content of a file.
+     *
+     * @todo Handle multiple files.
+     * @todo Maybe replace this command by a generic “exec”.
+     *
+     * @param string $file The file to print.
+     *
+     * @throws Exception If the file does not exist or is not readable.
+     */
     public function cat($file)
     {
         if (!file_exists($file))
         {
-            $this->_tequila->writeln('File does not exist.', true);
-        }
-        elseif (!is_readable($file))
-        {
-            $this->_tequila->writeln('File is not readable.', true);
-        }
-        else
-        {
-            $this->_tequila->writeln(file_get_contents($file));
+            throw new Exception('File does not exist.');
         }
 
+        if (!is_readable($file))
+        {
+            throw new Exception('File is not readable.');
+        }
+
+        $this->_tequila->writeln(file_get_contents($file));
     }
 
+    /**
+     * Waits for a few seconds.
+     */
+    public function sleep($seconds)
+    {
+        sleep($seconds);
+    }
 }
