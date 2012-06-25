@@ -16,6 +16,8 @@
 
 - Catches as much as possible, data written by commands (output bufferring).
 
+- “teq describe” should prints the docblock.
+
 # Permits record start to record errors.
 
 There are some use cases where we need to record commands that fail (throw
@@ -37,3 +39,9 @@ The downside is that errors due to typos in arguments are still recorded.
 
 A `record force` command could be use to force the recording of a command
 regardless whether an exception has been raised.
+
+## Prompts whether to record the error.
+
+**ACCEPTED**
+
+When an error occurs, prompts the user wheter or not he wants to record it.
