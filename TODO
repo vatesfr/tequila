@@ -15,3 +15,7 @@
 - Adds a debug mode which prints exceptions stack trace.
 
 - Catches as much as possible, data written by commands (output bufferring).
+
+- Adds a sleep command.
+
+- Permits record play to continue with errors.
