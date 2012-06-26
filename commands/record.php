@@ -113,13 +113,7 @@ final class record extends Tequila_Module
 
                 $this->_tequila->executeCommand($command);
 
-                if ($result = rtrim($my_writer->pop(), PHP_EOL))
-                {
-                    $result = preg_replace('/^/m', '# ', $result) . PHP_EOL;
-                }
-
-                // @todo even if it is only a comment, records it.
-                fwrite($handle, $command . PHP_EOL . $result . PHP_EOL);
+                $result = $my_writer->pop();
             }
             catch (_record_stop $e)
             {
@@ -128,11 +122,32 @@ final class record extends Tequila_Module
             catch (Tequila_Exception $e)
             {
                 $this->_tequila->writeln($e->getMessage(), true);
+                continue;
             }
             catch (Exception $e)
             {
                 $this->_tequila->writeln(get_class($e) . ': ' . $e->getMessage(), true);
+
+                $result = $my_writer->pop();
+
+                $answer = trim($this->_tequila->prompt(
+                    PHP_EOL
+                    .'The previous command raised an error.'.PHP_EOL
+                    .'Do you want to record it anyway? [y/N] '
+                ));
+                if (strcasecmp($answer, 'y') !== 0)
+                {
+                    continue;
+                }
             }
+
+            if ($result = rtrim($result, PHP_EOL))
+            {
+                $result = preg_replace('/^/m', '# ', $result) . PHP_EOL;
+            }
+
+            // @todo even if it is only a comment, records it.
+            fwrite($handle, $command . PHP_EOL . $result . PHP_EOL);
         }
 
         $this->_tequila->writer = $or_writer;
@@ -163,10 +178,10 @@ final class record extends Tequila_Module
             $continueOnFailure = false;
         }
 
-//        if (!is_bool($continueOnFailure))
-//        {
-//            $this->_tequila->writeln('Continue on failure expects \'true\' or \'false\'', true);
-//        }
+        /* if (!is_bool($continueOnFailure)) */
+        /* { */
+        /*     $this->_tequila->writeln('Continue on failure expects \'true\' or \'false\'', true); */
+        /* } */
 
         $handle = @fopen($file, 'r');
 
@@ -196,31 +211,34 @@ final class record extends Tequila_Module
             {
                 $this->_tequila->executeCommand($line);
 
-                if ($result = rtrim($myw->pop(), PHP_EOL))
-                {
-                    $result = preg_replace('/^/m', '# ', $result) . PHP_EOL;
-                }
-
-                $orw->writeln($result, false);
+                $result = $myw->pop();
             }
             catch (Tequila_UnspecifiedClass $e)
             {
-
+                continue;
             }
             catch (Exception $e)
             {
                 if (!$continueOnFailure)
                 {
+                    fclose($handle);
                     $this->_tequila->writer = $orw;
+
                     throw $e;
                 }
 
-                $orw->writeln(get_class($e). ': ' . $e->getMessage(), true);
+                $result = get_class($e). ': ' . $e->getMessage();
             }
+
+            if ($result = rtrim($result, PHP_EOL))
+            {
+                $result = preg_replace('/^/m', '# ', $result) . PHP_EOL;
+            }
+
+            $orw->writeln($result, false);
         }
 
         fclose($handle);
-
         $this->_tequila->writer = $orw;
     }
 

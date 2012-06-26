@@ -19,8 +19,6 @@ final class teq extends Tequila_Module
      *
      * @param string      $class_name
      * @param string|null $method_name
-     *
-     * @todo Prints the documentation of the appropriate class/method.
      */
     public function describe($class_name, $method_name = null)
     {
@@ -28,8 +26,11 @@ final class teq extends Tequila_Module
 
         if ($method_name === null)
         {
-            $methods = $this->_tequila->getAvailableMethods($class);
+            $this->_tequila->writeln(self::_getDocComment($class));
 
+            $this->_tequila->writeln();
+
+            $methods = $this->_tequila->getAvailableMethods($class);
             $this->_tequila->writeln(count($methods) . ' method(s) available');
             foreach ($methods as $method)
             {
@@ -41,8 +42,11 @@ final class teq extends Tequila_Module
 
         $method = $this->_tequila->getMethod($class, $method_name);
 
-        $parameters = $method->getParameters();
+        $this->_tequila->writeln(self::_getDocComment($method));
 
+        $this->_tequila->writeln();
+
+        $parameters = $method->getParameters();
         $this->_tequila->writeln(count($parameters) . ' parameter(s)');
         foreach ($parameters as $parameter)
         {
@@ -134,5 +138,25 @@ final class teq extends Tequila_Module
     public function sleep($seconds)
     {
         sleep($seconds);
+    }
+
+    private static function _getDocComment($node)
+    {
+        $comment = $node->getDocComment();
+
+        if ($comment === false)
+        {
+            return null;
+        }
+
+        return preg_replace(
+            array(
+                '#^\s*/\*\*\s*#', // Remove “/**” at the begining.
+                '#\s*\*/$#',      // Remove “*/” at the end.
+                '#^\s*\* ?#m',    // Remove “* ” on each line.
+            ),
+            '',
+            $comment
+        );
     }
 }

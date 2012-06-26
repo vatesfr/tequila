@@ -16,8 +16,6 @@
 
 - Catches as much as possible, data written by commands (output bufferring).
 
-- “teq describe” should prints the docblock.
-
 # Permits record start to record errors.
 
 There are some use cases where we need to record commands that fail (throw
