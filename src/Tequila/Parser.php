@@ -30,8 +30,9 @@
  *
  * Grammar:
  *
- *   cmdline = [ whitespaces ] { entry [ whitespaces ] } [ comment ]
- *   entry   = null | naked_str | quoted_str | raw_str
+ *   cmdline = cmd [ comment ] regex(/$/)
+ *   cmd     = [ whitespaces ] entry [ whitespaces ] entry [ whitespaces ] { entry [ whitespaces ] }
+ *   entry   = null | naked_str | quoted_str | raw_str | subcmd
  *   comment = '#' *anything*
  *
  *   whitespaces  = regex(\s+)
@@ -39,10 +40,10 @@
  *   naked_str    = *escaped sequence*
  *   quoted_str   = '"' *escaped sequence* '"'
  *   raw_str      = '%' start_delim characters end_delim
+ *   subcmd       = '$' start_delim cmd end_delim
  *
  * @author Julien Fontanet <julien.fontanet@isonoe.net>
  *
- * @todo Add comments support.
  * @todo Maybe add booleans (true/false/yes/no).
  */
 final class Tequila_Parser
@@ -52,8 +53,14 @@ final class Tequila_Parser
 	 *
 	 * @param string $s
 	 *
-	 * @return (string|null)[]|false Returns the found entries or false if the
-	 *     parsing failed.
+	 * @return Tequila_Parser_Command
+	 *
+	 * @throws Tequila_IncorrectSyntax   If the syntax was incorrect and
+	 *     therefore could not be parsed.
+	 * @throws Tequila_UnspecifiedClass  If there is a missing class for
+	 *     a command.
+	 * @throws Tequila_UnspecifiedMethod If there is a missing method for
+	 *     a command.
 	 */
 	public function parse($s)
 	{
@@ -82,25 +89,47 @@ final class Tequila_Parser
 
 	private function _cmdline()
 	{
-		$this->_whitespaces();
-
-		$entries = array();
-		while (($e = $this->_entry()) !== false)
-		{
-			$entries[] = $e;
-
-			$this->_whitespaces();
-		}
+		$cmd = $this->_cmd();
 
 		$this->_comment();
 
 		// Everything was not parsed.
 		if ($this->_i < $this->_n)
 		{
-			return false;
+			// @todo Should be Tequila_IncorrectSyntax
+			throw new Tequila_Exception;
 		}
 
-		return $entries;
+		return $cmd;
+	}
+
+	private function _cmd()
+	{
+		$this->_whitespaces();
+
+		if (($class = $this->_entry()) === false)
+		{
+			throw new Tequila_UnspecifiedClass($this->_i);
+		}
+
+		$this->_whitespaces();
+
+		if (($method = $this->_entry()) === false)
+		{
+			throw new Tequila_UnspecifiedMethod($class, $this->_i);
+		}
+
+		$this->_whitespaces();
+
+		$args = array();
+		while (($e = $this->_entry()) !== false)
+		{
+			$args[] = $e;
+
+			$this->_whitespaces();
+		}
+
+		return new Tequila_Parser_Command($class, $method, $args);
 	}
 
 	private function _entry()
@@ -108,7 +137,8 @@ final class Tequila_Parser
 		($e = $this->_null()) !== false
 			or ($e = $this->_nakedStr()) !== false
 			or ($e = $this->_quotedStr()) !== false
-			or $e = $this->_rawStr();
+			or ($e = $this->_rawStr()) !== false
+			or $e = $this->_subcmd();
 
 		return $e;
 	}
@@ -135,7 +165,7 @@ final class Tequila_Parser
 
 	private function _nakedStr()
 	{
-		if ($match = $this->_regex('/[^"%#](?:[^\\s\\\\]+|(?:\\\\.))*/'))
+		if ($match = $this->_regex('/(?:[a-zA-Z0-9-_.]+|(?:\\\\.))+/'))
 		{
 			return $this->_parseString($match[0], ' ');
 		}
@@ -162,20 +192,37 @@ final class Tequila_Parser
 		{
 			return false;
 		}
-
-		$pairs = array(
-			'(' => ')',
-			'[' => ']',
-			'{' => '}',
-			'<' => '>',
-		);
 		$sd = $match[1];
-		$ed = preg_quote(isset($pairs[$sd]) ? $pairs[$sd] : $sd, '/');
+		$ed = preg_quote(self::_getOpposite($sd), '/');
 		$sd = preg_quote($sd, '/');
 
 		if ($match = $this->_regex('/((?:[^'.$sd.$ed.']+|'.$sd.'(?1)'.$ed.')*)'.$ed.'/'))
 		{
 			return $match[1];
+		}
+
+		// No match, restore position.
+		$this->_i = $cursor;
+		return false;
+	}
+
+	private function _subcmd()
+	{
+		// Save current position.
+		$cursor = $this->_i;
+
+		if (!($match = $this->_regex('/\$([^[:alnum:][:cntrl:][:space:]])/')))
+		{
+			return false;
+		}
+		$sd = $match[1];
+		$ed = preg_quote(self::_getOpposite($sd), '/');
+
+		$cmd = $this->_cmd();
+
+		if ($this->_regex("/$ed/"))
+		{
+			return $cmd;
 		}
 
 		// No match, restore position.
@@ -221,5 +268,26 @@ final class Tequila_Parser
 		}
 
 		return implode($result);
+	}
+
+	/**
+	 * @param string $delimiter
+	 *
+	 * @return string
+	 */
+	private static function _getOpposite($delimiter)
+	{
+		static $pairs = array(
+			'(' => ')',
+			'[' => ']',
+			'{' => '}',
+			'<' => '>',
+		);
+
+		return
+			isset($pairs[$delimiter])
+			? $pairs[$delimiter]
+			: $delimiter
+			;
 	}
 }

@@ -7,8 +7,15 @@
  */
 class Tequila_UnspecifiedMethod extends Tequila_Exception
 {
-	public function __construct($class_name)
+	/**
+	 *
+	 *
+	 * @todo Removes $class_name, which is hard to compute during parsing
+	 *     (i.e. it might be an nested command).
+	 */
+	public function __construct($class_name, $index)
 	{
+		// @todo Adds the index in the message.
 		parent::__construct('Method not specified for class: '.$class_name);
 	}
 }

@@ -24,76 +24,123 @@ class Tequila_ParserTest extends PHPUnit_Framework_TestCase
 
 	//--------------------------------------
 
-	public function parseProvider()
+	public function successProvider()
 	{
 		return array(
 
-			'empty' =>
-			array('', array()),
-
-			'whitespaces' =>
-			array(" \n\t\r", array()),
-
 			'null' =>
-			array('null', array(null)),
+			array(
+				'class method null',
+				'class',
+				'method',
+				array(null)
+			),
 
 			'quoted string' =>
 			array(
-				'"quoted string with escaped characters \n\t\r\\\\\\""',
+				'class method "quoted string with escaped characters \n\t\r\\\\\\""',
+				'class',
+				'method',
 				array("quoted string with escaped characters \n\t\r\\\"")
 			),
 
 			'raw string' =>
 			array(
-				'%(raw string \n\t\r\\\\)',
+				'class method %(raw string \n\t\r\\\\)',
+				'class',
+				'method',
 				array('raw string \n\t\r\\\\')
 			),
 
 			'raw strings with various delimiters' =>
 			array(
-				'%(who) %[what] %{where} %<how> %|why|',
+				'class method %(who) %[what] %{where} %<how> %|why|',
+				'class',
+				'method',
 				array('who', 'what', 'where', 'how', 'why')
-			),
-
-			'alaphanumeric delimiter for raw string' =>
-			array(
-				'%Aalphanumeric characters cannot be used as delimitersA',
-				false
-			),
-
-			'space delimiter for raw string' =>
-			array(
-				'% alphanumeric characters cannot be used as delimiters ',
-				false
 			),
 
 			'naked string' =>
 			array(
-				'naked\ string\ \n\t\r\\\\\\"',
+				'class method naked\ string\ \n\t\r\\\\\\"',
+				'class',
+				'method',
 				array("naked string \n\t\r\\\"")
 			),
 
 			'one character naked string' =>
-			array('_', array('_')),
-
-			'non terminated quoted string' =>
-			array('"invalid quoted string', false),
-
-			'non terminated raw string' =>
-			array('%(invalid raw string', false),
+			array(
+				'class method _',
+				'class',
+				'method',
+				array('_')
+			),
 		);
 	}
 
 	/**
-	 * Parses strings and checks the result is the one expected.
-	 *
-	 * @dataProvider parseProvider
+	 * @dataProvider successProvider
 	 */
-	public function testParse($string, $result)
+	public function testSuccess($string, $class, $method, $args)
 	{
-		$this->assertSame(
-			$result,
+
+		$this->assertEquals(
+			new Tequila_Parser_Command($class, $method, $args),
 			$this->object->parse($string)
 		);
+	}
+
+	//--------------------------------------
+
+	public function failureProvider()
+	{
+		return array(
+
+			'missing class' =>
+			array(
+				'',
+				'Tequila_UnspecifiedClass'
+			),
+
+			'missing method' =>
+			array(
+				'class',
+				'Tequila_UnspecifiedMethod'
+			),
+
+			'alaphanumeric delimiter for raw string' =>
+			array(
+				'class method %Aalphanumeric characters cannot be used as delimitersA',
+				'Tequila_Exception'
+			),
+
+			'space delimiter for raw string' =>
+			array(
+				'class method % alphanumeric characters cannot be used as delimiters ',
+				'Tequila_Exception'
+			),
+
+			'non terminated quoted string' =>
+			array(
+				'class method "invalid quoted string',
+				'Tequila_Exception'
+			),
+
+			'non terminated raw string' =>
+			array(
+				'class method %(invalid raw string',
+				'Tequila_Exception'
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider failureProvider
+	 */
+	public function testFailer($string, $exception)
+	{
+		$this->setExpectedException($exception);
+
+		$this->object->parse($string);
 	}
 }

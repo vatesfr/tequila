@@ -163,7 +163,12 @@ class Tequila
 
 			try
 			{
-				$this->executeCommand($string);
+				$result = $this->executeCommand($string);
+
+				if ($result !== null)
+				{
+					$this->writeln(self::prettyFormat($result));
+				}
 			}
 			catch (Tequila_Exception $e)
 			{
@@ -285,7 +290,7 @@ class Tequila
 	/**
 	 * Executes a given command.
 	 *
-	 * @param string $command
+	 * @param Tequila_Parser_Command|string $command
 	 *
 	 * @return mixed The result of the executed method.
 	 *
@@ -298,17 +303,29 @@ class Tequila
 	 */
 	public function executeCommand($command)
 	{
-		$result = $this->parseCommand($command);
-		if (!$result)
+		($command instanceof Tequila_Parser_Command)
+			or $command = $this->parseCommand($command);
+
+		// @todo Where to put that? In parseCommand()?
+		//$this->_history[] = $command;
+
+		($command->class instanceof Tequila_Parser_Command)
+			and $command = $this->executeCommand($command->class);
+
+		($command->method instanceof Tequila_Parser_Command)
+			and $command = $this->executeCommand($command->method);
+
+		foreach ($command->args as &$arg)
 		{
-			throw new Tequila_UnspecifiedClass();
+			($arg instanceof Tequila_Parser_Command)
+				and $arg = $this->executeCommand($arg);
 		}
 
-		$this->_history[] = $command;
-
-		list($class, $method, $args) = $result;
-
-		return $this->execute($class, $method, $args);
+		return $this->execute(
+			$command->class,
+			$command->method,
+			$command->args
+		);
 	}
 
 	/**
@@ -356,14 +373,7 @@ class Tequila
 			$object = $class->newInstance();
 		}
 
-		$result = $method->invokeArgs($object, $arguments);
-
-		if ($result !== null)
-		{
-			$this->writeln(self::prettyFormat($result));
-		}
-
-		return $result;
+		return $method->invokeArgs($object, $arguments);
 	}
 
 	/**
@@ -371,34 +381,17 @@ class Tequila
 	 *
 	 * @param string $command
 	 *
-	 * @return (string,string,mixed[])|false An array containing the class, the
-	 *     method and the arguments or false if the command was empty.
+	 * @return Tequila_Parser_Command The command parsed as an object.
 	 *
+	 * @param throws Tequila_IncorrectSyntax   If the parsing failed.
+	 * @param throws Tequila_UnspecifiedClass  If no class was specified.
 	 * @param throws Tequila_UnspecifiedMethod If no method was specified.
 	 */
 	public function parseCommand($command)
 	{
 		$command = rtrim($command, PHP_EOL);
 
-		$entries = $this->_parser->parse($command);
-
-		// Nothing significant has been entered.
-		if (($entries === false) ||
-		    (($n = count($entries)) === 0))
-		{
-			return false;
-		}
-
-		if ($n === 1)
-		{
-			throw new Tequila_UnspecifiedMethod($entries[0]);
-		}
-
-		return array(
-			$entries[0],             // class
-			$entries[1],             // method
-			array_slice($entries, 2) // arguments
-		);
+		return $this->_parser->parse($command);
 	}
 
 	public function prompt($prompt)

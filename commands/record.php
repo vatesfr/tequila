@@ -111,9 +111,12 @@ final class record extends Tequila_Module
             {
                 $my_writer->pop();
 
-                $this->_tequila->executeCommand($command);
+                $retval = $this->_tequila->executeCommand($command);
 
                 $result = $my_writer->pop();
+
+                isset($retval)
+	                and $result .= $retval;
             }
             catch (_record_stop $e)
             {
