@@ -140,6 +140,40 @@ final class teq extends Tequila_Module
         sleep($seconds);
     }
 
+    /**
+     * Prints a date with a given format.
+     *
+     * @param string $date   The date to print (default is “now”).
+     * @param string $format The format to use to print the date (“default is c”).
+     *
+     * @return string
+     */
+    public function date($date = null, $format = null)
+    {
+	    if (isset($date))
+	    {
+		    // @todo Handle false on incorrect date.
+		    $date = strtotime($date);
+	    }
+	    else
+	    {
+		    $date = time();
+	    }
+
+	    isset($format)
+		    or $format = 'c';
+
+	    return date($format, $date);
+    }
+
+    /**
+     * Waits for the user to press enter.
+     */
+    public function pause()
+    {
+	    $this->_tequila->prompt('');
+    }
+
     private static function _getDocComment($node)
     {
         $comment = $node->getDocComment();
