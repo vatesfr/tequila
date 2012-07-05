@@ -23,9 +23,9 @@ Where each of this entries (except the comment) can be:
 
 There is 3 formats which aim to be enough for any use.
 
-The first and simplest is _plain_: only alphanumerics, -_. and escaped sequences
-are allowed, but they are very light to type and therefore much used for classes
-and methods names.
+The first and simplest is _plain_: only alphanumerics, **/**, **-**, **_**,
+**.** and escaped sequences are allowed, but they are very light to type and
+therefore much used for classes and methods names.
 
 	this\ is\ a\ plain\ string
 

@@ -191,7 +191,7 @@ final class Tequila_Parser
 
 	private function _nakedStr()
 	{
-		if ($match = $this->_regex('/(?:[a-zA-Z0-9-_.]+|(?:\\\\.))+/'))
+		if ($match = $this->_regex('#(?:[a-zA-Z0-9-_./]+|(?:\\\\.))+#'))
 		{
 			return $this->_parseString($match[0], ' ');
 		}
