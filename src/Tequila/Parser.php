@@ -32,10 +32,11 @@
  *
  *   cmdline = cmd [ comment ] regex(/$/)
  *   cmd     = [ whitespaces ] entry [ whitespaces ] entry [ whitespaces ] { entry [ whitespaces ] }
- *   entry   = null | naked_str | quoted_str | raw_str | subcmd
+ *   entry   = boolean | null | naked_str | quoted_str | raw_str | subcmd
  *   comment = '#' *anything*
  *
  *   whitespaces  = regex(\s+)
+ *   boolean      = regex(/true|false/i)
  *   null         = regex(/null/i)
  *   naked_str    = *escaped sequence*
  *   quoted_str   = '"' *escaped sequence* '"'
@@ -44,7 +45,9 @@
  *
  * @author Julien Fontanet <julien.fontanet@isonoe.net>
  *
- * @todo Maybe add booleans (true/false/yes/no).
+ * @todo Use return value to indicates if the rule matches and the &$val
+ *     parameter to return the value.
+ * @todo Handle Unicode alphanumerics in naked strings.
  */
 final class Tequila_Parser
 {
@@ -96,8 +99,7 @@ final class Tequila_Parser
 		// Everything was not parsed.
 		if ($this->_i < $this->_n)
 		{
-			// @todo Should be Tequila_IncorrectSyntax
-			throw new Tequila_Exception;
+			throw new Tequila_IncorrectSyntax($this->_i);
 		}
 
 		return $cmd;
@@ -107,14 +109,14 @@ final class Tequila_Parser
 	{
 		$this->_whitespaces();
 
-		if (($class = $this->_entry()) === false)
+		if (!$this->_entry($class))
 		{
 			throw new Tequila_UnspecifiedClass($this->_i);
 		}
 
 		$this->_whitespaces();
 
-		if (($method = $this->_entry()) === false)
+		if (!$this->_entry($method))
 		{
 			throw new Tequila_UnspecifiedMethod($class, $this->_i);
 		}
@@ -122,7 +124,7 @@ final class Tequila_Parser
 		$this->_whitespaces();
 
 		$args = array();
-		while (($e = $this->_entry()) !== false)
+		while ($this->_entry($e))
 		{
 			$args[] = $e;
 
@@ -132,15 +134,23 @@ final class Tequila_Parser
 		return new Tequila_Parser_Command($class, $method, $args);
 	}
 
-	private function _entry()
+	/**
+	 * Note: see _boolean().
+	 */
+	private function _entry(&$val)
 	{
-		($e = $this->_null()) !== false
+		if (($e = $this->_null()) !== false
+			or $this->_boolean($e)
 			or ($e = $this->_nakedStr()) !== false
 			or ($e = $this->_quotedStr()) !== false
 			or ($e = $this->_rawStr()) !== false
-			or $e = $this->_subcmd();
+		    or $e = $this->_subcmd())
+		{
+			$val = $e;
+			return true;
+		}
 
-		return $e;
+		return false;
 	}
 
 	private function _comment()
@@ -151,6 +161,22 @@ final class Tequila_Parser
 	private function _whitespaces()
 	{
 		return (boolean) $this->_regex('/\\s+/');
+	}
+
+	/**
+	 * Note: Due to implementation it is not possible to return the “false”
+	 * value. Therefore the return value indicates whether the rule matches and
+	 * the value is stored in the “$val” argument.
+	 */
+	private function _boolean(&$val)
+	{
+		if (!($match = $this->_regex('/true|false/i')))
+		{
+			return false;
+		}
+
+		$val = (strcasecmp($match[0], 'true') === 0);
+		return true;
 	}
 
 	private function _null()

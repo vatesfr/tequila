@@ -170,7 +170,7 @@ final class record extends Tequila_Module
      * Play an existing recording.
      *
      * @param string $file
-     * @param integer $continueOnFailure 1|NULL
+     * @param boolean $continueOnFailure (default is false).
      *
      * @todo Add a verbose mode and only diplay commands in this mode.
      */
@@ -180,11 +180,6 @@ final class record extends Tequila_Module
         {
             $continueOnFailure = false;
         }
-
-        /* if (!is_bool($continueOnFailure)) */
-        /* { */
-        /*     $this->_tequila->writeln('Continue on failure expects \'true\' or \'false\'', true); */
-        /* } */
 
         $handle = @fopen($file, 'r');
 
