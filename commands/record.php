@@ -114,9 +114,8 @@ final class record extends Tequila_Module
                 $retval = $this->_tequila->executeCommand($command);
 
                 $result = $my_writer->pop();
-
                 isset($retval)
-	                and $result .= $retval;
+                    and $result .= $retval;
             }
             catch (_record_stop $e)
             {
@@ -196,23 +195,22 @@ final class record extends Tequila_Module
 
         while (($line = fgets($handle)) !== false)
         {
-            $line = rtrim(ltrim($line), PHP_EOL);
-
-            if (!$this->_tequila->parseCommand($line))
-            {
-                continue;
-            }
-
-            $orw->writeln($line, false);
-
             try
             {
-                $this->_tequila->executeCommand($line);
+                $line = rtrim(ltrim($line), PHP_EOL);
+
+                $retval = $this->_tequila->executeCommand($line);
 
                 $result = $myw->pop();
+                isset($retval)
+                    and $result .= $retval;
             }
             catch (Tequila_UnspecifiedClass $e)
             {
+                /*
+                 * This error happens with empty lines and comments which should
+                 * be properly ignored in recordings.
+                 */
                 continue;
             }
             catch (Exception $e)
@@ -228,11 +226,13 @@ final class record extends Tequila_Module
                 $result = get_class($e). ': ' . $e->getMessage();
             }
 
-            if ($result = rtrim($result, PHP_EOL))
+            $orw->writeln($line, false);
+
+            $result = rtrim($result, PHP_EOL);
+            if ($result !== '')
             {
                 $result = preg_replace('/^/m', '# ', $result) . PHP_EOL;
             }
-
             $orw->writeln($result, false);
         }
 
