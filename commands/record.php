@@ -46,7 +46,7 @@ final class _record_stop extends Exception
     public function __construct()
     {
         /*
-         * This message will be shown if the exception is not catched, ie. there
+         * This message will be shown if the exception is not caught, ie. there
          * is no current recording session.
          */
         parent::__construct('we are not recording');
@@ -65,8 +65,8 @@ final class record extends Tequila_Module
      * Starts recording commands.
      *
      * @param string $file
-     * @param string $mode 'w' for truncating the file at srecord start, 'a' for adding record at the end of file.
-     * 'w' by default.
+     * @param string $mode 'w' for truncating the file at record start, 'a' for
+     *     adding record at the end of file.  'w' by default.
      *
      * @todo Mutualise some code with Tequila::start() and
      *     Tequila::executeCommand().
@@ -80,7 +80,7 @@ final class record extends Tequila_Module
 
         if ($mode !== 'a' && $mode !== 'w')
         {
-            throw new Tequila_Exception('Record mdoe must be \'w\' for overwriting(default) or \'a\' for adding');
+            throw new Tequila_Exception('Record mode must be \'w\' for overwriting(default) or \'a\' for adding');
         }
 
         $handle = @fopen($file, $mode);
@@ -171,7 +171,7 @@ final class record extends Tequila_Module
      * @param string $file
      * @param boolean $continueOnFailure (default is false).
      *
-     * @todo Add a verbose mode and only diplay commands in this mode.
+     * @todo Add a verbose mode and only display commands in this mode.
      */
     public function play($file, $continueOnFailure = NULL)
     {
