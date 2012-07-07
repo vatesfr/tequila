@@ -310,10 +310,10 @@ class Tequila
 		//$this->_history[] = $command;
 
 		($command->class instanceof Tequila_Parser_Command)
-			and $command = $this->executeCommand($command->class);
+			and $command->class = $this->executeCommand($command->class);
 
 		($command->method instanceof Tequila_Parser_Command)
-			and $command = $this->executeCommand($command->method);
+			and $command->method = $this->executeCommand($command->method);
 
 		foreach ($command->args as &$arg)
 		{
