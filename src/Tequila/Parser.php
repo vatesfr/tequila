@@ -252,7 +252,7 @@ final class Tequila_Parser
 		// Save current position.
 		$cursor = $this->_i;
 
-		if (!($match = $this->_regex('/\$([^[:alnum:][:cntrl:][:space:]])/')))
+		if (!$this->_regex('/\$([^[:alnum:][:cntrl:][:space:]])/', $match))
 		{
 			return false;
 		}

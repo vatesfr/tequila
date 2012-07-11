@@ -188,7 +188,7 @@ final class teq extends Tequila_Module
      */
     public function list_vars()
     {
-        sort($this->_tequila->variables);
+        asort($this->_tequila->variables);
 
         return $this->_tequila->variables;
     }
