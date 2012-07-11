@@ -324,7 +324,7 @@ class Tequila
 	 */
 	public function evaluate($node)
 	{
-		if (is_string($node))
+		if (is_scalar($node))
 		{
 			return $node;
 		}
