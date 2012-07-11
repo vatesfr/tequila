@@ -170,6 +170,14 @@ class Tequila
 					$this->writeln(self::prettyFormat($result));
 				}
 			}
+			catch (Tequila_IncorrectSyntax $e)
+			{
+				$offset = strlen($this->prompt) + $e->index;
+
+				$this->writeln(str_repeat(' ', $offset).'▲');
+				$this->writeln(str_repeat('─', $offset).'┘');
+				$this->writeln('incorrect syntax at '.$e->index.': '.$e->getMessage());
+			}
 			catch (Tequila_Exception $e)
 			{
 				$this->writeln($e->getMessage(), true);

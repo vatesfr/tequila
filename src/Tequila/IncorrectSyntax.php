@@ -5,10 +5,14 @@
  *
  * @codeCoverageIgnore
  */
-final class Tequila_IncorrectSyntax extends Tequila_Exception
+class Tequila_IncorrectSyntax extends Tequila_Exception
 {
-	public function __construct($index)
+	public $index;
+
+	public function __construct($index, $reason)
 	{
-		parent::__construct('incorrect syntax at character '.$index);
+		$this->index = $index;
+
+		parent::__construct($reason);
 	}
 }

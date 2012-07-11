@@ -5,7 +5,7 @@
  *
  * @codeCoverageIgnore
  */
-class Tequila_UnspecifiedMethod extends Tequila_Exception
+final class Tequila_UnspecifiedMethod extends Tequila_IncorrectSyntax
 {
 	/**
 	 *
@@ -15,7 +15,6 @@ class Tequila_UnspecifiedMethod extends Tequila_Exception
 	 */
 	public function __construct($class_name, $index)
 	{
-		// @todo Adds the index in the message.
-		parent::__construct('Method not specified for class: '.$class_name);
+		parent::__construct($index, 'method not specified for class: '.$class_name);
 	}
 }

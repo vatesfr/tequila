@@ -88,9 +88,9 @@ final class Tequila_Parser
 		return true;
 	}
 
-	private function _fail()
+	private function _fail($reason = '')
 	{
-		throw new Tequila_IncorrectSyntax($this->_i);
+		throw new Tequila_IncorrectSyntax($this->_i, $reason);
 	}
 
 	//--------------------------------------
@@ -102,7 +102,7 @@ final class Tequila_Parser
 		$this->_comment();
 
 		// Everything was not parsed.
-		($this->_i === $this->_n) or $this->_fail();
+		($this->_i === $this->_n) or $this->_fail('unexpected token');
 
 		return $cmd;
 	}
@@ -116,7 +116,7 @@ final class Tequila_Parser
 			throw new Tequila_UnspecifiedClass($this->_i);
 		}
 
-		$this->_whitespaces() or $this->_fail();
+		$this->_whitespaces() or $this->_fail('missing whitespace');
 
 		if (!$this->_entry($method))
 		{

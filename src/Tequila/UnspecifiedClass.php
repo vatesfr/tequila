@@ -5,11 +5,10 @@
  *
  * @codeCoverageIgnore
  */
-class Tequila_UnspecifiedClass extends Tequila_Exception
+final class Tequila_UnspecifiedClass extends Tequila_IncorrectSyntax
 {
 	public function __construct($index)
 	{
-		// @todo Adds the index in the message.
-		parent::__construct('Class not specified');
+		parent::__construct($index, 'class not specified');
 	}
 }
