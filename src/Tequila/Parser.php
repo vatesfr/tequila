@@ -77,7 +77,7 @@ final class Tequila_Parser
 
 	//--------------------------------------
 
-	private function _regex($re)
+	private function _regex($re, &$match = null)
 	{
 		if (!preg_match($re.'A', $this->_s, $match, 0, $this->_i))
 		{
@@ -85,7 +85,7 @@ final class Tequila_Parser
 		}
 
 		$this->_i += strlen($match[0]);
-		return $match;
+		return true;
 	}
 
 	//--------------------------------------
@@ -139,28 +139,24 @@ final class Tequila_Parser
 	 */
 	private function _entry(&$val)
 	{
-		if (($e = $this->_null()) !== false
-			or $this->_boolean($e)
-			or ($e = $this->_nakedStr()) !== false
-			or ($e = $this->_quotedStr()) !== false
-			or ($e = $this->_rawStr()) !== false
-		    or $e = $this->_subcmd())
-		{
-			$val = $e;
-			return true;
-		}
-
-		return false;
+		return (
+			$this->_null($val)
+			|| $this->_boolean($val)
+			|| $this->_nakedStr($val)
+			|| $this->_quotedStr($val)
+			|| $this->_rawStr($val)
+			|| $this->_subcmd($val)
+		);
 	}
 
 	private function _comment()
 	{
-		return (boolean) $this->_regex('/#.*/');
+		return $this->_regex('/#.*/');
 	}
 
 	private function _whitespaces()
 	{
-		return (boolean) $this->_regex('/\\s+/');
+		return $this->_regex('/\\s+/');
 	}
 
 	/**
@@ -170,7 +166,7 @@ final class Tequila_Parser
 	 */
 	private function _boolean(&$val)
 	{
-		if (!($match = $this->_regex('/true|false/i')))
+		if (!$this->_regex('/true|false/i', $match))
 		{
 			return false;
 		}
@@ -179,42 +175,45 @@ final class Tequila_Parser
 		return true;
 	}
 
-	private function _null()
+	private function _null(&$val)
 	{
-		if ($this->_regex('/null/i'))
+		if (!$this->_regex('/null/i'))
 		{
-			return null;
+			return false;
+		}
+
+		$val = null;
+		return true;
+	}
+
+	private function _nakedStr(&$val)
+	{
+		if ($this->_regex('#(?:[a-zA-Z0-9-_./]+|(?:\\\\.))+#', $match))
+		{
+			$val = $this->_parseString($match[0], ' ');
+			return true;
 		}
 
 		return false;
 	}
 
-	private function _nakedStr()
+	private function _quotedStr(&$val)
 	{
-		if ($match = $this->_regex('#(?:[a-zA-Z0-9-_./]+|(?:\\\\.))+#'))
+		if ($this->_regex('/"((?:[^"\\\\]+|(?:\\\\.))*)"/', $match))
 		{
-			return $this->_parseString($match[0], ' ');
+			$val = $this->_parseString($match[1], '"');
+			return true;
 		}
 
 		return false;
 	}
 
-	private function _quotedStr()
-	{
-		if ($match = $this->_regex('/"((?:[^"\\\\]+|(?:\\\\.))*)"/'))
-		{
-			return $this->_parseString($match[1], '"');
-		}
-
-		return false;
-	}
-
-	private function _rawStr()
+	private function _rawStr(&$val)
 	{
 		// Save current position.
 		$cursor = $this->_i;
 
-		if (!($match = $this->_regex('/%([^[:alnum:][:cntrl:][:space:]])/')))
+		if (!$this->_regex('/%([^[:alnum:][:cntrl:][:space:]])/', $match))
 		{
 			return false;
 		}
@@ -222,9 +221,10 @@ final class Tequila_Parser
 		$ed = preg_quote(self::_getOpposite($sd), '/');
 		$sd = preg_quote($sd, '/');
 
-		if ($match = $this->_regex('/((?:[^'.$sd.$ed.']+|'.$sd.'(?1)'.$ed.')*)'.$ed.'/'))
+		if ($this->_regex('/((?:[^'.$sd.$ed.']+|'.$sd.'(?1)'.$ed.')*)'.$ed.'/', $match))
 		{
-			return $match[1];
+			$val = $match[1];
+			return true;
 		}
 
 		// No match, restore position.
@@ -232,7 +232,7 @@ final class Tequila_Parser
 		return false;
 	}
 
-	private function _subcmd()
+	private function _subcmd(&$val)
 	{
 		// Save current position.
 		$cursor = $this->_i;
@@ -244,11 +244,11 @@ final class Tequila_Parser
 		$sd = $match[1];
 		$ed = preg_quote(self::_getOpposite($sd), '/');
 
-		$cmd = $this->_cmd();
+		$val = $this->_cmd();
 
 		if ($this->_regex("/$ed/"))
 		{
-			return $cmd;
+			return true;
 		}
 
 		// No match, restore position.
