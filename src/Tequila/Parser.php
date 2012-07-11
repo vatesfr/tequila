@@ -31,7 +31,7 @@
  * Grammar:
  *
  *   cmdline = cmd [ comment ] regex(/$/)
- *   cmd     = [ whitespaces ] entry [ whitespaces ] entry [ whitespaces ] { entry [ whitespaces ] }
+ *   cmd     = [ whitespaces ] entry whitespaces entry { whitespaces entry } [ whitespaces ]
  *   entry   = boolean | null | naked_str | quoted_str | raw_str | subcmd
  *   comment = '#' *anything*
  *
@@ -88,6 +88,11 @@ final class Tequila_Parser
 		return true;
 	}
 
+	private function _fail()
+	{
+		throw new Tequila_IncorrectSyntax($this->_i);
+	}
+
 	//--------------------------------------
 
 	private function _cmdline()
@@ -97,10 +102,7 @@ final class Tequila_Parser
 		$this->_comment();
 
 		// Everything was not parsed.
-		if ($this->_i < $this->_n)
-		{
-			throw new Tequila_IncorrectSyntax($this->_i);
-		}
+		($this->_i < $this->_n) or $this->_fail();
 
 		return $cmd;
 	}
@@ -114,22 +116,22 @@ final class Tequila_Parser
 			throw new Tequila_UnspecifiedClass($this->_i);
 		}
 
-		$this->_whitespaces();
+		$this->_whitespaces() or $this->_fail();
 
 		if (!$this->_entry($method))
 		{
 			throw new Tequila_UnspecifiedMethod($class, $this->_i);
 		}
 
-		$this->_whitespaces();
-
 		$args = array();
 		while ($this->_entry($e))
 		{
-			$args[] = $e;
+			$this->_whitespaces() or $this->_fail();
 
-			$this->_whitespaces();
+			$args[] = $e;
 		}
+
+		$this->_whitespaces() or $this->_fail();
 
 		return new Tequila_Parser_Command($class, $method, $args);
 	}
