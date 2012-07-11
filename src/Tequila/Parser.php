@@ -102,7 +102,7 @@ final class Tequila_Parser
 		$this->_comment();
 
 		// Everything was not parsed.
-		($this->_i < $this->_n) or $this->_fail();
+		($this->_i === $this->_n) or $this->_fail();
 
 		return $cmd;
 	}
@@ -124,14 +124,10 @@ final class Tequila_Parser
 		}
 
 		$args = array();
-		while ($this->_entry($e))
+		while ($this->_whitespaces() && $this->_entry($e))
 		{
-			$this->_whitespaces() or $this->_fail();
-
 			$args[] = $e;
 		}
-
-		$this->_whitespaces() or $this->_fail();
 
 		return new Tequila_Parser_Command($class, $method, $args);
 	}
