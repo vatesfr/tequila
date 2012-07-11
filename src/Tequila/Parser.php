@@ -45,8 +45,6 @@
  *
  * @author Julien Fontanet <julien.fontanet@isonoe.net>
  *
- * @todo Use return value to indicates if the rule matches and the &$val
- *     parameter to return the value.
  * @todo Handle Unicode alphanumerics in naked strings.
  */
 final class Tequila_Parser
@@ -164,7 +162,7 @@ final class Tequila_Parser
 	 */
 	private function _boolean(&$val)
 	{
-		if (!$this->_regex('/true|false/i', $match))
+		if (!$this->_regex('/(?:true|false)(?=\s+|$)/i', $match))
 		{
 			return false;
 		}
@@ -175,7 +173,7 @@ final class Tequila_Parser
 
 	private function _null(&$val)
 	{
-		if (!$this->_regex('/null/i'))
+		if (!$this->_regex('/null(?=\s+|$)/i'))
 		{
 			return false;
 		}
