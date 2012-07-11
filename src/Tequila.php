@@ -22,6 +22,8 @@ class Tequila
 	public
 		$prompt = 'tequila> ';
 
+	public $variables = array();
+
 	public function __construct(
 		Tequila_ClassLoader $class_loader = null,
 		Tequila_Logger      $logger       = null,
@@ -314,26 +316,42 @@ class Tequila
 		($command instanceof Tequila_Parser_Command)
 			or $command = $this->parseCommand($command);
 
-		// @todo Where to put that? In parseCommand()?
-		//$this->_history[] = $command;
+		return $this->evaluate($command);
+	}
 
-		($command->class instanceof Tequila_Parser_Command)
-			and $command->class = $this->executeCommand($command->class);
-
-		($command->method instanceof Tequila_Parser_Command)
-			and $command->method = $this->executeCommand($command->method);
-
-		foreach ($command->args as &$arg)
+	/**
+	 * @todo Write documentation.
+	 */
+	public function evaluate($node)
+	{
+		if (is_string($node))
 		{
-			($arg instanceof Tequila_Parser_Command)
-				and $arg = $this->executeCommand($arg);
+			return $node;
 		}
 
-		return $this->execute(
-			$command->class,
-			$command->method,
-			$command->args
-		);
+		if ($node instanceof Tequila_Parser_Variable)
+		{
+			if (isset($this->variables[$node->name]))
+			{
+				return $this->variables[$node->name];
+			}
+
+			return null;
+		}
+
+		if ($node instanceof Tequila_Parser_Command)
+		{
+			$class  = $this->evaluate($node->class);
+			$method = $this->evaluate($node->method);
+
+			$args = array();
+			foreach ($node->args as $arg)
+			{
+				$args[] = $this->evaluate($arg);
+			}
+
+			return $this->execute($class, $method, $args);
+		}
 	}
 
 	/**
@@ -455,6 +473,21 @@ class Tequila
 			array($this, '_getConfigVariables'),
 			$entry
 		);
+	}
+
+	/**
+	 * @todo Write documentation.
+	 */
+	public function setVariable($name, $value)
+	{
+		if (isset($value))
+		{
+			$this->variables[$name] = $value;
+		}
+		else
+		{
+			unset($this->variables[$name]);
+		}
 	}
 
 	/**

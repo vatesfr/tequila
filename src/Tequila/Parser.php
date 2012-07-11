@@ -32,7 +32,7 @@
  *
  *   cmdline = cmd [ comment ] regex(/$/)
  *   cmd     = [ whitespaces ] entry whitespaces entry { whitespaces entry } [ whitespaces ]
- *   entry   = boolean | null | naked_str | quoted_str | raw_str | subcmd
+ *   entry   = boolean | null | naked_str | quoted_str | raw_str | variable | subcmd
  *   comment = '#' *anything*
  *
  *   whitespaces  = regex(\s+)
@@ -41,6 +41,7 @@
  *   naked_str    = *escaped sequence*
  *   quoted_str   = '"' *escaped sequence* '"'
  *   raw_str      = '%' start_delim characters end_delim
+ *   variable     = regex(/\$[a-z0-9_]+/i)
  *   subcmd       = '$' start_delim cmd end_delim
  *
  * @author Julien Fontanet <julien.fontanet@isonoe.net>
@@ -141,6 +142,7 @@ final class Tequila_Parser
 			|| $this->_nakedStr($val)
 			|| $this->_quotedStr($val)
 			|| $this->_rawStr($val)
+			|| $this->_variable($val)
 			|| $this->_subcmd($val)
 		);
 	}
@@ -222,6 +224,23 @@ final class Tequila_Parser
 			$val = $match[1];
 			return true;
 		}
+
+		// No match, restore position.
+		$this->_i = $cursor;
+		return false;
+	}
+
+	private function _variable(&$val)
+	{
+		// Save current position.
+		$cursor = $this->_i;
+
+		if ($this->_regex('/\$([a-z0-9_]+)/i', $match))
+		{
+			$val = new Tequila_Parser_Variable($match[1]);
+			return true;
+		}
+
 
 		// No match, restore position.
 		$this->_i = $cursor;
