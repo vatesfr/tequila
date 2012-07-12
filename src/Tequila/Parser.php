@@ -32,7 +32,7 @@
  *
  *   cmdline = cmd [ comment ] regex(/$/)
  *   cmd     = [ whitespaces ] entry whitespaces entry { whitespaces entry } [ whitespaces ]
- *   entry   = boolean | null | naked_str | quoted_str | raw_str | variable | subcmd
+ *   entry   = boolean | null | naked_str | quoted_str | raw_str | list | variable | subcmd
  *   comment = '#' *anything*
  *
  *   whitespaces  = regex(\s+)
@@ -41,6 +41,7 @@
  *   naked_str    = *escaped sequence*
  *   quoted_str   = '"' *escaped sequence* '"'
  *   raw_str      = '%' start_delim characters end_delim
+ *   list         = '@(' [ whitespaces ] [ entry { whitespaces entry } [ whitespaces ] ] ')'
  *   variable     = regex(/\$[a-z0-9_]+/i)
  *   subcmd       = '$(' cmd ')'
  *
@@ -78,15 +79,22 @@ final class Tequila_Parser
 
 	private function _assert($string)
 	{
+		$this->_check($string)
+			or $this->_fail('expected “'.$string.'”');
+	}
+
+	private function _check($string)
+	{
 		$length = strlen($string);
 
 		if (($this->_i < $this->_n)
 		    && (substr_compare($this->_s, $string, $this->_i, $length) === 0))
 		{
 			$this->_i += $length;
+			return true;
 		}
 
-		$this->_fail('expected “'.$string.'”');
+		return false;
 	}
 
 	private function _regex($re, &$match = null)
@@ -155,6 +163,7 @@ final class Tequila_Parser
 			|| $this->_nakedStr($val)
 			|| $this->_quotedStr($val)
 			|| $this->_rawStr($val)
+			|| $this->_list($val)
 			|| $this->_variable($val)
 			|| $this->_subcmd($val)
 		);
@@ -240,6 +249,33 @@ final class Tequila_Parser
 		return true;
 	}
 
+	private function _list(&$val)
+	{
+		if (!$this->_check('@('))
+		{
+			return false;
+		}
+
+		$this->_whitespaces();
+
+		$val = array();
+
+		if ($this->_entry($e))
+		{
+			$val[] = $e;
+			while ($this->_whitespaces() && $this->_entry($e))
+			{
+				$val[] = $e;
+			}
+
+			$this->_whitespaces();
+		}
+
+		$this->_assert(')');
+
+		return true;
+	}
+
 	private function _variable(&$val)
 	{
 		if (!$this->_regex('/\$([a-z0-9_]+)/i', $match))
@@ -253,7 +289,7 @@ final class Tequila_Parser
 
 	private function _subcmd(&$val)
 	{
-		if (!$this->_regex('/\$\(/'))
+		if (!$this->_check('$('))
 		{
 			return false;
 		}

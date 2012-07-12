@@ -329,6 +329,16 @@ class Tequila
 			return $node;
 		}
 
+		if (is_array($node))
+		{
+			foreach ($node as &$entry)
+			{
+				$entry = $this->evaluate($entry);
+			}
+
+			return $node;
+		}
+
 		if ($node instanceof Tequila_Parser_Variable)
 		{
 			if (isset($this->variables[$node->name]))
@@ -343,12 +353,7 @@ class Tequila
 		{
 			$class  = $this->evaluate($node->class);
 			$method = $this->evaluate($node->method);
-
-			$args = array();
-			foreach ($node->args as $arg)
-			{
-				$args[] = $this->evaluate($arg);
-			}
+			$args   = $this->evaluate($node->args);
 
 			return $this->execute($class, $method, $args);
 		}
