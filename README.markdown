@@ -55,6 +55,17 @@ Escaped sequences:
 - \": Quote (only for quoted strings)
 - \ : Space (only for naked strings)
 
+## Variables
+
+Variables associate a identifier to a value.
+
+An identifier is a string which conforms to the following regular expression
+`/[a-z0-9_]+/i`.
+
+A variable starts with a dollar sign (**$**) followed by its identifier.
+
+	class method $my_variable
+
 ## Nested commands
 
 Nested commands are mainly used to add dynamicity to scripts but can very handy

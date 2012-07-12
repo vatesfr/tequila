@@ -31,6 +31,7 @@ final class teq extends Tequila_Module
             $this->_tequila->writeln();
 
             $methods = $this->_tequila->getAvailableMethods($class);
+            sort($methods);
             $this->_tequila->writeln(count($methods) . ' method(s) available');
             foreach ($methods as $method)
             {
@@ -150,20 +151,20 @@ final class teq extends Tequila_Module
      */
     public function date($date = null, $format = null)
     {
-	    if (isset($date))
-	    {
-		    // @todo Handle false on incorrect date.
-		    $date = strtotime($date);
-	    }
-	    else
-	    {
-		    $date = time();
-	    }
+        if (isset($date))
+        {
+            // @todo Handle false on incorrect date.
+            $date = strtotime($date);
+        }
+        else
+        {
+            $date = time();
+        }
 
-	    isset($format)
-		    or $format = 'c';
+        isset($format)
+            or $format = 'c';
 
-	    return date($format, $date);
+        return date($format, $date);
     }
 
     /**
@@ -171,7 +172,25 @@ final class teq extends Tequila_Module
      */
     public function pause()
     {
-	    $this->_tequila->prompt('');
+        $this->_tequila->prompt('');
+    }
+
+    /**
+     * Assigns a value to a variable.
+     */
+    public function set($name, $value)
+    {
+        $this->_tequila->setVariable($name, $value);
+    }
+
+    /**
+     * List all defined variables.
+     */
+    public function list_vars()
+    {
+        asort($this->_tequila->variables);
+
+        return $this->_tequila->variables;
     }
 
     private static function _getDocComment($node)
