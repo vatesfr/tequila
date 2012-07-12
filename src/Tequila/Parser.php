@@ -41,7 +41,7 @@
  *   naked_str    = *escaped sequence*
  *   quoted_str   = '"' *escaped sequence* '"'
  *   raw_str      = '%' start_delim characters end_delim
- *   subcmd       = '$' start_delim cmd end_delim
+ *   subcmd       = '$(' cmd ')'
  *
  * @author Julien Fontanet <julien.fontanet@isonoe.net>
  *
@@ -206,50 +206,37 @@ final class Tequila_Parser
 
 	private function _rawStr(&$val)
 	{
-		// Save current position.
-		$cursor = $this->_i;
-
 		if (!$this->_regex('/%([^[:alnum:][:cntrl:][:space:]])/', $match))
 		{
 			return false;
 		}
 		$sd = $match[1];
-		$ed = preg_quote(self::_getOpposite($sd), '/');
-		$sd = preg_quote($sd, '/');
+		$ed = self::_getOpposite($sd);
 
-		if ($this->_regex('/((?:[^'.$sd.$ed.']+|'.$sd.'(?1)'.$ed.')*)'.$ed.'/', $match))
-		{
-			$val = $match[1];
-			return true;
-		}
+		// Quoted versions of start and end delimiters.
+		$qed = preg_quote($ed, '/');
+		$qsd = preg_quote($sd, '/');
 
-		// No match, restore position.
-		$this->_i = $cursor;
-		return false;
+		$this->_regex('/(?:[^'.$qsd.$qed.']+|'.$qsd.'(?R)'.$qed.')*/', $match);
+		$val = $match[0];
+
+		$this->_regex("/$ed/") or $this->_fail("missing “${ed}”");
+
+		return true;
 	}
 
 	private function _subcmd(&$val)
 	{
-		// Save current position.
-		$cursor = $this->_i;
-
-		if (!($match = $this->_regex('/\$([^[:alnum:][:cntrl:][:space:]])/')))
+		if (!$this->_regex('/\$\(/'))
 		{
 			return false;
 		}
-		$sd = $match[1];
-		$ed = preg_quote(self::_getOpposite($sd), '/');
 
 		$val = $this->_cmd();
 
-		if ($this->_regex("/$ed/"))
-		{
-			return true;
-		}
+		$this->_regex('/\)/') or $this->_fail('missing “)”');
 
-		// No match, restore position.
-		$this->_i = $cursor;
-		return false;
+		return true;
 	}
 
 	//--------------------------------------

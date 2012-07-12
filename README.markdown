@@ -60,8 +60,8 @@ Escaped sequences:
 Nested commands are mainly used to add dynamicity to scripts but can very handy
 in many other situations.
 
-Their syntax is similar to the one used for _raw_ strings except that the prefix
-is a dollar sign (**$**) instead of a percent.
+A nested command starts with a dollar sign followed by a left parenthesis
+(**$(**) and ends with a right parenthesis (**)**).
 
 	class1 method $(class2 method)
 
