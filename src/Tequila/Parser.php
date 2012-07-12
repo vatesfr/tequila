@@ -76,6 +76,19 @@ final class Tequila_Parser
 
 	//--------------------------------------
 
+	private function _assert($string)
+	{
+		$length = strlen($string);
+
+		if (($this->_i < $this->_n)
+		    && (substr_compare($this->_s, $string, $this->_i, $length) === 0))
+		{
+			$this->_i += $length;
+		}
+
+		$this->_fail('expected “'.$string.'”');
+	}
+
 	private function _regex($re, &$match = null)
 	{
 		if (!preg_match($re.'A', $this->_s, $match, 0, $this->_i))
@@ -222,7 +235,7 @@ final class Tequila_Parser
 		$this->_regex('/(?:[^'.$qsd.$qed.']+|'.$qsd.'(?R)'.$qed.')*/', $match);
 		$val = $match[0];
 
-		$this->_regex("/$qed/") or $this->_fail("missing “${ed}”");
+		$this->_assert($ed);
 
 		return true;
 	}
@@ -247,7 +260,7 @@ final class Tequila_Parser
 
 		$val = $this->_cmd();
 
-		$this->_regex('/\)/') or $this->_fail('missing “)”');
+		$this->_assert(')');
 
 		return true;
 	}
