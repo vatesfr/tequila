@@ -222,26 +222,20 @@ final class Tequila_Parser
 		$this->_regex('/(?:[^'.$qsd.$qed.']+|'.$qsd.'(?R)'.$qed.')*/', $match);
 		$val = $match[0];
 
-		$this->_regex("/$ed/") or $this->_fail("missing “${ed}”");
+		$this->_regex("/$qed/") or $this->_fail("missing “${ed}”");
 
 		return true;
 	}
 
 	private function _variable(&$val)
 	{
-		// Save current position.
-		$cursor = $this->_i;
-
-		if ($this->_regex('/\$([a-z0-9_]+)/i', $match))
+		if (!$this->_regex('/\$([a-z0-9_]+)/i', $match))
 		{
-			$val = new Tequila_Parser_Variable($match[1]);
-			return true;
+			return false;
 		}
 
-
-		// No match, restore position.
-		$this->_i = $cursor;
-		return false;
+		$val = new Tequila_Parser_Variable($match[1]);
+		return true;
 	}
 
 	private function _subcmd(&$val)
