@@ -40,7 +40,7 @@ final class _redirect_reader extends Tequila_Reader
 
 	public function read(Tequila $tequila, $prompt)
 	{
-		return fgetts($this->_inHdl);
+		return fgets($this->_inHdl);
 	}
 
 	private $_inHdl;
@@ -98,8 +98,8 @@ final class redirect extends Tequila_Module
 		// original reader
 		$orr = $this->_tequila->reader;
 
-		$handle = fopen($file, 'w');
-		$this->_tequila->reader = new _redirect_reader($handle, $handle);
+		$handle = fopen($file, 'r');
+		$this->_tequila->reader = new _redirect_reader($handle);
 
 		try
 		{
