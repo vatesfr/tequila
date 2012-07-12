@@ -103,7 +103,12 @@ final class redirect extends Tequila_Module
 
 		try
 		{
-			$this->_tequila->execute($class_name, $method_name, array_slice($args, 3));
+			$result = $this->_tequila->execute($class_name, $method_name, array_slice($args, 3));
+
+			if ($result !== null)
+			{
+				$this->_tequila->writeln(self::prettyFormat($result));
+			}
 		}
 		catch (Exception $e)
 		{}
