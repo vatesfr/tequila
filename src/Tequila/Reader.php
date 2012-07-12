@@ -33,10 +33,18 @@ abstract class Tequila_Reader
 	 */
 	public static function factory()
 	{
-		if (extension_loaded('readline'))
-		{
-			return new Tequila_Reader_Readline();
-		}
+		/*
+		 * Tequila_Reader_Readline is very limited:
+		 * - it does not provide any completion;
+		 * - it does not save the history between runs.
+		 *
+		 * It is therefore disabled for now and all advanced editing will be
+		 * provided by “rlwrap”.
+		 */
+		/* if (extension_loaded('readline')) */
+		/* { */
+		/* 	return new Tequila_Reader_Readline(); */
+		/* } */
 
 		return new Tequila_Reader_Plain();
 	}
