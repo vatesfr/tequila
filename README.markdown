@@ -19,6 +19,7 @@ Where each of this entries (except the comment) can be:
 - a boolean value (`true` or `false`, case insensitive);
 - the null value (`null`, case insensitive);
 - a string;
+- a variable;
 - a nested command.
 
 ## String formats
