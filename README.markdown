@@ -15,7 +15,9 @@ A basic command has the following format:
 	class method arg1 ... argN # Comment
 
 Where each of this entries (except the comment) can be:
-- the identifier `null` (case insensitive);
+
+- a boolean value (`true` or `false`, case insensitive);
+- the null value (`null`, case insensitive);
 - a string;
 - a nested command.
 
@@ -38,7 +40,7 @@ but quotes and backslashes must be escaped, you even may use escaped sequences.
 The last one is _raw_ and allows the user to type raw string very easily without
 needing to escape special characters. They start with a percent sign (**%**)
 followed by a start delimiter which can be anything but an alphanumeric, a space
-or a control character, and they end with the caracter same except for **(**,
+or a control character, and they end with the same character except for **(**,
 **[**, **{** and **<** where it is the opposite (respectively **)**, **]**,
 **}** and **>**). Thus you may use the character which suits the best your
 string. Please note that matching pairs inside the string are ignored.
