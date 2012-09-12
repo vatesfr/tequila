@@ -22,6 +22,7 @@ Gallic::$include_dirs[] = $_Tequila_dir;
 
 function loadConfig(array $config, Tequila $tequila)
 {
+	// Plain Tequila attributes.
 	foreach (array('prompt') as $entry)
 	{
 		if (isset($config[$entry]))
