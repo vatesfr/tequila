@@ -70,6 +70,11 @@ final class redirect extends Tequila_Module
 		$orw = $this->_tequila->writer;
 
 		$handle = fopen($file, 'w');
+		if ($handle === false)
+		{
+			throw new Exception('File could not be opened: '.$file);
+		}
+
 		$this->_tequila->writer = new _redirect_writer($handle, $handle);
 
 		try
@@ -104,6 +109,11 @@ final class redirect extends Tequila_Module
 		$orr = $this->_tequila->reader;
 
 		$handle = fopen($file, 'r');
+		if ($handle === false)
+		{
+			throw new Exception('File could not be opened: '.$file);
+		}
+
 		$this->_tequila->reader = new _redirect_reader($handle);
 
 		try
