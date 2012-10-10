@@ -113,7 +113,7 @@ final class record extends Tequila_Module
 
                 $retval = $this->_tequila->executeCommand($command);
                 isset($retval)
-                    and $this->_tequila->write(Tequila::prettyFormat($retval).PHP_EOL);
+                    and $this->_tequila->write($this->_tequila->prettyFormat($retval).PHP_EOL);
 
                 $result = $my_writer->pop();
             }
@@ -203,7 +203,7 @@ final class record extends Tequila_Module
 
                 $result = $myw->pop();
                 isset($retval)
-                    and $result .= Tequila::prettyFormat($retval).PHP_EOL;
+                    and $result .= $this->_tequila->prettyFormat($retval).PHP_EOL;
             }
             catch (Tequila_UnspecifiedClass $e)
             {

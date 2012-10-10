@@ -168,7 +168,7 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 	{
 		$o = new Tequila();
 
-		$this->assertInstanceOf('Tequila_ClassLoader_Void', $o->class_loader);
+		$this->assertInstanceOf('Tequila_ClassLoader_Void', $o->classLoader);
 		$this->assertInstanceOf('Tequila_Logger_Void', $o->logger);
 		$this->assertInstanceOf(
 			'Tequila_Reader_'.(extension_loaded('readline') ?
@@ -185,8 +185,8 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 	{
 		return array(
 
-			'class_loader' =>
-			array('class_loader', true, new MyClassLoader(), null),
+			'classLoader' =>
+			array('classLoader', true, new MyClassLoader(), null),
 
 			'is_running' =>
 			array('is_running', false, false, null),
@@ -239,13 +239,13 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 
 			// The only correct value for $class_loader is a
 			// Tequila_ClassLoader.
-			array('class_loader', null,           false),
-			array('class_loader', 1337,           false),
-			array('class_loader', 'a string',     false),
-			array('class_loader', true,           false),
-			array('class_loader', new stdClass(), false),
+			array('classLoader', null,           false),
+			array('classLoader', 1337,           false),
+			array('classLoader', 'a string',     false),
+			array('classLoader', true,           false),
+			array('classLoader', new stdClass(), false),
 
-			array('class_loader', new MyClassLoader(), true),
+			array('classLoader', new MyClassLoader(), true),
 
 			// The only correct value for $logger is a Tequila_Logger.
 			array('logger', null,           false),
@@ -343,7 +343,7 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 	 */
 	function testStart($command, $exception)
 	{
-		$this->object->class_loader->base = 'MyTequilaModule';
+		$this->object->classLoader->base = 'MyTequilaModule';
 		$this->object->reader->data[] = $command;
 
 		// Makes sure Tequila stops.
@@ -364,7 +364,7 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 			try
 			{
 				$expected = array(
-					Tequila::prettyFormat($this->object->executeCommand($command)),
+					$this->object->prettyFormat($this->object->executeCommand($command)),
 					false
 				);
 			}
@@ -393,7 +393,7 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 
 	function testGetAvailableMethods()
 	{
-		$this->object->class_loader->base = 'ClassWithOneAvailableMethod';
+		$this->object->classLoader->base = 'ClassWithOneAvailableMethod';
 
 		$methods = $this->object->getAvailableMethods(
 			$this->object->getClass(self::getNextClass())
@@ -445,7 +445,7 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 			$this->setExpectedException('Tequila_NoSuchClass');
 		}
 
-		$this->object->class_loader = $class_loader;
+		$this->object->classLoader = $class_loader;
 
 		$class = $this->object->getClass($class_name);
 		$this->assertSame($class_name, $class->getName());
@@ -484,7 +484,7 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 	 */
 	function testGetMethod($method_name, $valid)
 	{
-		$this->object->class_loader->base = 'ClassWithOneAvailableMethod';
+		$this->object->classLoader->base = 'ClassWithOneAvailableMethod';
 
 		if (!$valid)
 		{
@@ -514,7 +514,7 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 
 
 			// Unspecified method.
-			array($cl_yes, self::getNextClass(), null,
+			array($cl_yes, self::getNextClass().' ', null,
 			      'Tequila_UnspecifiedMethod'),
 
 			// No such class.
@@ -555,7 +555,7 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 			$this->setExpectedException($exception);
 		}
 
-		$this->object->class_loader = $class_loader;
+		$this->object->classLoader = $class_loader;
 
 		$this->assertSame($result, $this->object->executeCommand($command));
 	}
@@ -611,7 +611,7 @@ class TequilaTest extends PHPUnit_Framework_TestCase
 			$this->setExpectedException($exception);
 		}
 
-		$this->object->class_loader = $class_loader;
+		$this->object->classLoader = $class_loader;
 
 		$this->assertSame(
 			$result,

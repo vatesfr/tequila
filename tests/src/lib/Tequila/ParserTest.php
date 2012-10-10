@@ -104,7 +104,7 @@ class Tequila_ParserTest extends PHPUnit_Framework_TestCase
 
 			'missing method' =>
 			array(
-				'class',
+				'class ',
 				'Tequila_UnspecifiedMethod'
 			),
 

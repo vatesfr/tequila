@@ -5,13 +5,13 @@
  *
  * @author Julien Fontanet <julien.fontanet@isonoe.net>
  *
- * @property Tequila_ClassLoader $class_loader
+ * @property Tequila_ClassLoader $classLoader
  * @property Tequila_Logger      $logger
  * @property Tequila_Reader      $reader
  * @property Tequila_Writer      $writer
  *
  * @property-read array          $history
- * @property-read boolean        $is_running
+ * @property-read boolean        $isRunning
  * @property-read string         $user
  * @property-read Tequila_Parser $parser
  */
@@ -36,11 +36,11 @@ class Tequila
 
 		if ($class_loader !== null)
 		{
-			$this->class_loader = $class_loader;
+			$this->classLoader = $class_loader;
 		}
 		else
 		{
-			$this->class_loader = new Tequila_ClassLoader_Void;
+			$this->classLoader = new Tequila_ClassLoader_Void;
 		}
 
 		if ($logger !== null)
@@ -81,8 +81,12 @@ class Tequila
 		switch ($name)
 		{
 		case 'class_loader':
-		case 'history':
+			return $this->classLoader; // Compatibility.
 		case 'is_running':
+			return $this->isRunning; // Compatibility
+		case 'classLoader':
+		case 'history':
+		case 'isRunning':
 		case 'logger':
 		case 'reader':
 		case 'user':
@@ -98,15 +102,20 @@ class Tequila
 	public function __set($name, $value)
 	{
 		static $classes = array(
-			'class_loader' => 'Tequila_ClassLoader',
+			'classLoader'  => 'Tequila_ClassLoader',
 			'logger'       => 'Tequila_Logger',
 			'reader'       => 'Tequila_Reader',
 			'writer'       => 'Tequila_Writer',
 		);
 
+		if ($name === 'class_loader')
+		{
+			$name = 'classLoader'; // Compatibility.
+		}
+
 		switch ($name)
 		{
-		case 'class_loader':
+		case 'classLoader':
 		case 'logger':
 		case 'reader':
 		case 'writer':
@@ -140,12 +149,12 @@ class Tequila
 	 */
 	public function start()
 	{
-		if ($this->is_running)
+		if ($this->isRunning)
 		{
 			throw new Tequila_Exception(__CLASS__.' is already running');
 		}
 
-		$this->_is_running = true;
+		$this->_isRunning = true;
 
 		do {
 			$string = $this->prompt($this->prompt);
@@ -188,7 +197,7 @@ class Tequila
 			{
 				$this->writeln(get_class($e).': '.$e->getMessage(), true);
 			}
-		} while ($this->_is_running);
+		} while ($this->_isRunning);
 	}
 
 	/**
@@ -198,7 +207,7 @@ class Tequila
 	 */
 	public function stop()
 	{
-		$this->_is_running = false;
+		$this->_isRunning = false;
 	}
 
 	////////////////////////////////////////
@@ -249,7 +258,7 @@ class Tequila
 				throw new Tequila_NoSuchClass($class_name);
 			}
 		}
-		elseif ($this->_class_loader->load($class_name) &&
+		elseif ($this->_classLoader->load($class_name) &&
 		        class_exists($class_name, false))
 		{
 			$this->_loaded_classes[$class_name] = true;
@@ -481,6 +490,51 @@ class Tequila
 	}
 
 	/**
+	 * @todo Write documentation
+	 */
+	public function setOption($name, $value)
+	{
+		static $true_strings = array(
+			'on'   => true,
+			'true' => true,
+			'yes'  => true,
+		);
+
+		if (is_array($value))
+		{
+			foreach ($value as $value)
+			{
+				$this->setOption($name, $value);
+			}
+			return;
+		}
+
+		is_string($value)
+			and $value = $this->parseConfigEntry($value);
+
+		switch ($name)
+		{
+		case 'include-dirs':
+			if (!($this->_classLoader instanceof Tequila_ClassLoader_Gallic))
+			{
+				throw new Exception('incompatible class loader');
+			}
+			$this->_classLoader->addDirectory($value);
+			break;
+		case 'log-file':
+			$this->_logger = new Tequila_Logger_File($value);
+			break;
+		case 'quote-strings':
+			is_string($value)
+				and $value = isset($true_strings[strtolower($value)]);
+			$this->_quoteStrings = $value;
+			break;
+		default:
+			throw new Exception('Invalid option: '.$name);
+		}
+	}
+
+	/**
 	 * @todo Write documentation.
 	 */
 	public function setVariable($name, $value)
@@ -502,7 +556,7 @@ class Tequila
 	 *
 	 * @return string
 	 */
-	public static function prettyFormat($value, $indent = '')
+	public function prettyFormat($value, $indent = '')
 	{
 		$next_indent = $indent.'    ';
 
@@ -512,8 +566,8 @@ class Tequila
 			foreach ($value as $key => $entry)
 			{
 				$str .=
-					$next_indent.self::prettyFormat($key).' => '.
-					self::prettyFormat($entry, $next_indent).','.PHP_EOL;
+					$next_indent.$this->prettyFormat($key).' => '.
+					$this->prettyFormat($entry, $next_indent).','.PHP_EOL;
 
 			}
 			return ($str.$indent.')');
@@ -532,6 +586,14 @@ class Tequila
 		if (is_string($value)
 		    || (is_object($value) && method_exists($value, '__toString')))
 		{
+			$value = (string) $value;
+
+			if (!$this->_quoteStrings
+			    && ($indent === '')) // First level
+			{
+				return rtrim($value); // Prevents unecessary line feeds.
+			}
+
 			// Protect quotes and antislashes and wraps with quotes.
 			return "'".preg_replace('/(?=[\\\\\'])/', '\\', (string) $value)."'";
 		}
@@ -541,12 +603,13 @@ class Tequila
 	}
 
 	private
-		$_class_loader,
+		$_classLoader,
 		$_history        = array(),
-		$_is_running     = false,
+		$_isRunning      = false,
 		$_loaded_classes = array(), // Used for security purposes.
 		$_logger,
 		$_parser,
+		$_quoteStrings   = true,
 		$_reader,
 		$_user,
 		$_writer;

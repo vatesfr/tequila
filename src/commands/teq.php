@@ -184,6 +184,14 @@ final class teq extends Tequila_Module
     }
 
     /**
+     * Changes Tequila's behaviour by setting an option.
+     */
+    public function setOption($name, $value)
+    {
+        $this->_tequila->setOption($name, $value);
+    }
+
+    /**
      * List all defined variables.
      */
     public function list_vars()

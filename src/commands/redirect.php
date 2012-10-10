@@ -83,7 +83,7 @@ final class redirect extends Tequila_Module
 
 			if ($result !== null)
 			{
-				$this->_tequila->write(Tequila::prettyFormat($result).PHP_EOL);
+				$this->_tequila->write($this->_tequila->prettyFormat($result).PHP_EOL);
 			}
 		}
 		catch (Exception $e)
@@ -122,7 +122,7 @@ final class redirect extends Tequila_Module
 
 			if ($result !== null)
 			{
-				$this->_tequila->writeln(self::prettyFormat($result));
+				$this->_tequila->writeln($this->_tequila->prettyFormat($result));
 			}
 		}
 		catch (Exception $e)

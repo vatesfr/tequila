@@ -12,6 +12,11 @@ class Tequila_ClassLoader_Gallic extends Tequila_ClassLoader
 		$this->_dirs = (array) $dirs;
 	}
 
+	public function addDirectory($dir)
+	{
+		$this->_dirs[] = $dir;
+	}
+
 	public function load($class_name)
 	{
 		return Gallic_Loader::loadClass($class_name, $this->_dirs);

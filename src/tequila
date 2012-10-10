@@ -6,61 +6,66 @@
 
 $_Tequila_dir = defined('__DIR__') ? __DIR__ : dirname(__FILE__);
 
-set_include_path(implode(PATH_SEPARATOR, array(
-	$_Tequila_dir.'/../libs/gallic/src',
-	'/usr/share/php5/lib',
-	'/usr/share/php',
-)));
-
-if (!class_exists('Gallic'))
-{
-	require 'Gallic.php';
-}
-Gallic::$include_dirs[] = $_Tequila_dir;
+require($_Tequila_dir.'/lib/Gallic.php');
 
 ////////////////////////////////////////////////////////////////////////////////
 
-function loadConfig(array $config, Tequila $tequila)
+function getConfig($ini_file, array $args = null)
 {
-	// Plain Tequila attributes.
-	foreach (array('prompt') as $entry)
+	$config = array();
+
+	if (isset($ini_file))
 	{
-		if (isset($config[$entry]))
+		foreach (parse_ini_file($ini_file) as $key => $value)
 		{
-			$tequila->$entry = $tequila->parseConfigEntry($config[$entry]);
+			// For compatibility.
+			$key = str_replace('_', '-', $key);
+
+			$config[$key] = $value;
 		}
 	}
 
-	if (isset($config['include_dirs']))
+	foreach ($args as $arg)
 	{
-		$tequila->class_loader = new Tequila_ClassLoader_Gallic(
-			$tequila->parseConfigEntry($config['include_dirs'])
-		);
+		if (!preg_match('/^--([^=]+)(?:=(.*))?$/', $arg, $matches))
+		{
+			fwrite(STDERR, 'Incorrect option format: '.$arg);
+			exit(1);
+		}
+
+		$key   = $matches[1];
+		$value = isset($matches[2]) ? $matches[2] : true;
+
+		if (substr_compare($key, '[]', -2) === 0)
+		{
+			$config[substr($key, 0, -2)][] = $value;
+		}
+		else
+		{
+			$config[$key] = $value;
+		}
 	}
 
-	if (isset($config['log_file']))
-	{
-		$tequila->logger = new Tequila_Logger_File(
-			$tequila->parseConfigEntry($config['log_file'])
-		);
-	}
+	return $config;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-$tequila = new Tequila();
-
-// First, tries to find the config file in the current directory.
-if (is_file($_Tequila_dir.'/config.ini'))
-{
-	loadConfig(parse_ini_file($_Tequila_dir.'/config.ini'), $tequila);
-}
-else
-{
-	loadConfig(parse_ini_file('/etc/tequila/config.ini'), $tequila);
-}
+$config = getConfig(
+	$_Tequila_dir.'/config.ini',
+	array_slice($_SERVER['argv'], 1)
+);
 
 unset($_Tequila_dir);
+
+$tequila = new Tequila(
+	new Tequila_ClassLoader_Gallic(array())
+);
+
+foreach ($config as $key => $value)
+{
+	$tequila->setOption($key, $value);
+}
 
 $tequila->start();
 
