@@ -7,10 +7,10 @@
 /**
  * This specific Tequila_Writer is needed to capture commands results.
  */
-final class _record_writer extends Tequila_Writer
+final class _record_start_writer extends Tequila_Writer
 {
 
-    public function __construct(Tequila_Writer $writer = null)
+	public function __construct(Tequila_Writer $writer)
     {
         $this->_writer = $writer;
     }
@@ -18,9 +18,7 @@ final class _record_writer extends Tequila_Writer
     public function write($string, $error)
     {
         $this->_output .= $string;
-
-        isset($this->_writer)
-            and $this->_writer->write($string, $error);
+        $this->_writer->write($string, $error);
     }
 
     public function pop()
@@ -35,6 +33,40 @@ final class _record_writer extends Tequila_Writer
     private $_output = '';
     private $_writer;
 
+}
+
+/**
+ *
+ */
+final class _record_play_writer extends Tequila_Writer
+{
+	public function __construct(Tequila_Writer $writer)
+	{
+		$this->_writer = $writer;
+	}
+
+	public function write($string, $error)
+	{
+		if ($string === '')
+		{
+			return;
+		}
+
+		// Appends “# ” to line feeds unless it's at the end.
+		$string = preg_replace('/(?<=\n)(?!$)/', '# ', $string);
+
+		// Prepends “# ” to the string only if it is the begining of a line.
+		if ($this->_beginingOfLine)
+		{
+			$string = '# '.$string;
+		}
+		$this->_beginingOfLine = ($string[strlen($string) - 1] === "\n");
+
+		$this->_writer->write($string, $error);
+	}
+
+	private $_beginingOfLine = true;
+	private $_writer;
 }
 
 /**
@@ -92,7 +124,7 @@ final class record extends Tequila_Module
         }
 
         $or_writer = $this->_tequila->writer;
-        $my_writer = new _record_writer($or_writer);
+        $my_writer = new _record_start_writer($or_writer);
 
         $this->_tequila->writer = $my_writer;
 
@@ -188,8 +220,8 @@ final class record extends Tequila_Module
             return;
         }
 
-        $orw = $this->_tequila->writer; // Original writer.
-        $myw = new _record_writer;      // My writer.
+        $orw = $this->_tequila->writer;       // Original writer.
+        $myw = new _record_play_writer($orw); // My writer.
 
         $this->_tequila->writer = $myw;
 
@@ -199,19 +231,19 @@ final class record extends Tequila_Module
             {
                 $line = rtrim(ltrim($line), PHP_EOL);
 
+                if (empty($line) || ($line[0] === '#'))
+                {
+	                continue;
+                }
+
+                $orw->writeln($line, false);
+
                 $retval = $this->_tequila->executeCommand($line);
 
-                $result = $myw->pop();
                 isset($retval)
-                    and $result .= $this->_tequila->prettyFormat($retval).PHP_EOL;
-            }
-            catch (Tequila_UnspecifiedClass $e)
-            {
-                /*
-                 * This error happens with empty lines and comments which should
-                 * be properly ignored in recordings.
-                 */
-                continue;
+	                and $myw->write($this->_tequila->prettyFormat($retval).PHP_EOL);
+
+                $orw->write(PHP_EOL, false);
             }
             catch (Exception $e)
             {
@@ -223,17 +255,8 @@ final class record extends Tequila_Module
                     throw $e;
                 }
 
-                $result = get_class($e). ': ' . $e->getMessage();
+                $myw->write(get_class($e). ': ' . $e->getMessage());
             }
-
-            $orw->writeln($line, false);
-
-            $result = rtrim($result, PHP_EOL);
-            if ($result !== '')
-            {
-                $result = preg_replace('/^/m', '# ', $result) . PHP_EOL;
-            }
-            $orw->writeln($result, false);
         }
 
         fclose($handle);
