@@ -241,7 +241,7 @@ final class record extends Tequila_Module
                 $retval = $this->_tequila->executeCommand($line);
 
                 isset($retval)
-	                and $myw->write($this->_tequila->prettyFormat($retval).PHP_EOL);
+	                and $myw->write($this->_tequila->prettyFormat($retval).PHP_EOL, false);
 
                 $orw->write(PHP_EOL, false);
             }
@@ -255,7 +255,7 @@ final class record extends Tequila_Module
                     throw $e;
                 }
 
-                $myw->write(get_class($e). ': ' . $e->getMessage());
+                $myw->write(get_class($e). ': ' . $e->getMessage().PHP_EOL, true);
             }
         }
 
