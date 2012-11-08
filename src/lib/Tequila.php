@@ -19,8 +19,7 @@ class Tequila
 {
 	// If we want to set these properties private, we should use the “__get” and
 	// “__set” magic methods to keep API compatibility.
-	public
-		$prompt = 'tequila> ';
+	public $prompt;
 
 	public $variables = array();
 
@@ -31,8 +30,13 @@ class Tequila
 		Tequila_Writer      $writer       = null
 	)
 	{
-		$user_info = posix_getpwuid(posix_getuid());
-		$this->_user = $user_info['name'];
+		$this->_user = getenv('SUDO_USER');
+		if ($this->_user === false)
+		{
+			$user_info = posix_getpwuid(posix_getuid());
+			$this->_user = $user_info['name'];
+		}
+		$this->prompt = $this->_user.'> ';
 
 		if ($class_loader !== null)
 		{
