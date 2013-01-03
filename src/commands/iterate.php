@@ -50,13 +50,19 @@ final class iterate extends Tequila_Module
         $hooks = array();
 
         /**
-         * We reference the hook parameter for replacement
+         * We reference the hooks parameters for replacement
          */
         foreach ($nestedArgs as &$value)
         {
-            if ('hook' == $value)
+            $matches = array();
+            if (preg_match('/^hook([0-9]*)$/', $value, $matches))
             {
-                $hooks[] = &$value;
+                $hookNumber = isset($matches[1]) ? (integer) $matches[1] : 0;
+                isset($hooks[$hookNumber])
+                    || $hooks[$hookNumber] = array();
+
+                $hooks[$hookNumber][] = &$value;
+                $value = NULL;
             }
         }
 
@@ -66,20 +72,44 @@ final class iterate extends Tequila_Module
             throw new Exception('File could not be opened: ' . $filePath);
         }
 
-        while (false !== ($line = fgets($handle)))
+        while (false !== ($line = fgetcsv($handle, 0, ';', '"')))
         {
-            $line = trim($line, "\n");
+            foreach ($this->_tequila->variables as $varName => $varValue)
+            {
+                if (preg_match('/^iterate[0-9]*$/', $varName))
+                {
+                    unset($this->_tequila->variables[$varName]);
+                }
+            }
+
+            $this->_tequila->setVariable('iterate', $line[0]);
+            foreach ($line as $key => $cellValue)
+            {
+                $this->_tequila->setVariable('iterate' . $key, $cellValue);
+            }
+
+            $missingHooks = false;
+            foreach ($hooks as $hookNumber => $hookReferences)
+            {
+                if (!array_key_exists($hookNumber, $line))
+                {
+                    $line[$hookNumber] = NULL;
+                    $missingHooks = true;
+                }
+
+                foreach ($hookReferences as &$reference)
+                {
+                    $reference = $line[$hookNumber];
+                }
+            }
 
             $skip = false;
-            if ('' == $line)
+            if ($missingHooks)
             {
                 $promptLegalValues = array('', NULL, 'yes', 'no');
-                do
-                {
-                    $prompt = $this->_tequila->prompt('Execute iteration with empty line ? (NO/yes) :');
-                    $prompt = trim(strtolower($prompt));
-                }
-                while (!in_array($prompt, $promptLegalValues));
+                $prompt = $this->_tequila->promptSecure(
+                    'Execute iteration with missing hooked parameters ? (NO/yes) :', $promptLegalValues, true
+                );
 
                 switch ($prompt)
                 {
@@ -101,12 +131,6 @@ final class iterate extends Tequila_Module
             if ($skip)
             {
                 continue;
-            }
-
-            $this->_tequila->setVariable('iterate', $line);
-            foreach ($hooks as &$hook)
-            {
-                $hook = $line;
             }
 
             try

@@ -1,0 +1,2 @@
+teq list_vars
+teq writeln go $iterate $iterate0 $iterate1 $iterate2 og

@@ -1,3 +1,1 @@
-teq writeln go
-teq writeln $iterate
-teq writeln og
+teq writeln go $iterate og
