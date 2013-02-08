@@ -10,7 +10,7 @@
 final class _record_start_writer extends Tequila_Writer
 {
 
-	public function __construct(Tequila_Writer $writer)
+    public function __construct(Tequila_Writer $writer)
     {
         $this->_writer = $writer;
     }
@@ -40,33 +40,35 @@ final class _record_start_writer extends Tequila_Writer
  */
 final class _record_play_writer extends Tequila_Writer
 {
-	public function __construct(Tequila_Writer $writer)
-	{
-		$this->_writer = $writer;
-	}
 
-	public function write($string, $error)
-	{
-		if ($string === '')
-		{
-			return;
-		}
+    public function __construct(Tequila_Writer $writer)
+    {
+        $this->_writer = $writer;
+    }
 
-		// Appends “# ” to line feeds unless it's at the end.
-		$string = preg_replace('/(?<=\n)(?!$)/', '# ', $string);
+    public function write($string, $error)
+    {
+        if ($string === '')
+        {
+            return;
+        }
 
-		// Prepends “# ” to the string only if it is the begining of a line.
-		if ($this->_beginingOfLine)
-		{
-			$string = '# '.$string;
-		}
-		$this->_beginingOfLine = ($string[strlen($string) - 1] === "\n");
+        // Appends “# ” to line feeds unless it's at the end.
+        $string = preg_replace('/(?<=\n)(?!$)/', '# ', $string);
 
-		$this->_writer->write($string, $error);
-	}
+        // Prepends “# ” to the string only if it is the begining of a line.
+        if ($this->_beginingOfLine)
+        {
+            $string = '# ' . $string;
+        }
+        $this->_beginingOfLine = ($string[strlen($string) - 1] === "\n");
 
-	private $_beginingOfLine = true;
-	private $_writer;
+        $this->_writer->write($string, $error);
+    }
+
+    private $_beginingOfLine = true;
+    private $_writer;
+
 }
 
 /**
@@ -123,10 +125,10 @@ final class record extends Tequila_Module
             return;
         }
 
-        $or_writer = $this->_tequila->writer;
-        $my_writer = new _record_start_writer($or_writer);
+        $originalWriter = $this->_tequila->writer;
+        $recordWriter = new _record_start_writer($originalWriter);
 
-        $this->_tequila->writer = $my_writer;
+        $this->_tequila->writer = $recordWriter;
 
         for (;;)
         {
@@ -141,13 +143,13 @@ final class record extends Tequila_Module
 
             try
             {
-                $my_writer->pop();
+                $recordWriter->pop();
 
-                $retval = $this->_tequila->executeCommand($command);
-                isset($retval)
-                    and $this->_tequila->write($this->_tequila->prettyFormat($retval).PHP_EOL);
+                $response = $this->_tequila->executeCommand($command);
+                isset($response)
+                    && $this->_tequila->writeln($this->_tequila->prettyFormat($response));
 
-                $result = $my_writer->pop();
+                $result = $recordWriter->pop();
             }
             catch (_record_stop $e)
             {
@@ -162,13 +164,13 @@ final class record extends Tequila_Module
             {
                 $this->_tequila->writeln(get_class($e) . ': ' . $e->getMessage(), true);
 
-                $result = $my_writer->pop();
+                $result = $recordWriter->pop();
 
                 $answer = trim($this->_tequila->prompt(
-                    PHP_EOL
-                    .'The previous command raised an error.'.PHP_EOL
-                    .'Do you want to record it anyway? [y/N] '
-                ));
+                        PHP_EOL
+                        . 'The previous command raised an error.' . PHP_EOL
+                        . 'Do you want to record it anyway? [y/N] '
+                    ));
                 if (strcasecmp($answer, 'y') !== 0)
                 {
                     continue;
@@ -177,14 +179,14 @@ final class record extends Tequila_Module
 
             if ($result = rtrim($result, PHP_EOL))
             {
-                $result = preg_replace('/^/m', '# ', $result) . PHP_EOL;
+                $result = preg_replace('/^/m', '# ', $result) . PHP_EOL; // ???
             }
 
             // @todo even if it is only a comment, records it.
             fwrite($handle, $command . PHP_EOL . $result . PHP_EOL);
         }
 
-        $this->_tequila->writer = $or_writer;
+        $this->_tequila->writer = $originalWriter;
 
         fclose($handle);
     }
@@ -220,10 +222,10 @@ final class record extends Tequila_Module
             return;
         }
 
-        $orw = $this->_tequila->writer;       // Original writer.
-        $myw = new _record_play_writer($orw); // My writer.
+        $originalWriter = $this->_tequila->writer;
+        $playerWriter = new _record_play_writer($originalWriter);
 
-        $this->_tequila->writer = $myw;
+        $this->_tequila->writer = $playerWriter;
 
         while (($line = fgets($handle)) !== false)
         {
@@ -231,36 +233,35 @@ final class record extends Tequila_Module
             {
                 $line = rtrim(ltrim($line), PHP_EOL);
 
-                if (empty($line) || ($line[0] === '#'))
+                if (preg_match('/^(\s)*$/', $line) || ($line[0] === '#'))
                 {
-	                continue;
+                    continue;
                 }
 
-                $orw->writeln($line, false);
+                $originalWriter->writeln($line, false);
 
-                $retval = $this->_tequila->executeCommand($line);
+                $response = $this->_tequila->executeCommand($line);
 
-                isset($retval)
-	                and $myw->write($this->_tequila->prettyFormat($retval).PHP_EOL, false);
-
-                $orw->write(PHP_EOL, false);
+                isset($response)
+                    && $this->_tequila->writeln($this->_tequila->prettyFormat($response), false);
             }
-            catch (Exception $e)
+            catch (Exception $exc)
             {
                 if (!$continueOnFailure)
                 {
                     fclose($handle);
-                    $this->_tequila->writer = $orw;
+                    $this->_tequila->writer = $originalWriter;
 
-                    throw $e;
+                    throw $exc;
                 }
 
-                $myw->write(get_class($e). ': ' . $e->getMessage().PHP_EOL, true);
+                $this->_tequila->writeln(get_class($exc) . ': ' . $exc->getMessage(), true);
             }
+            $originalWriter->writeln('', false);
         }
 
         fclose($handle);
-        $this->_tequila->writer = $orw;
+        $this->_tequila->writer = $originalWriter;
     }
 
 }

@@ -18,6 +18,8 @@
 class Tequila
 {
 
+    const INDENT = '    ';
+
     // If we want to set these properties private, we should use the “__get” and
     // “__set” magic methods to keep API compatibility.
     public $prompt;
@@ -180,7 +182,7 @@ class Tequila
 
                 if ($result !== null)
                 {
-                    $this->writeln(self::prettyFormat($result));
+                    $this->writeln($this->prettyFormat($result));
                 }
             }
             catch (Tequila_IncorrectSyntax $e)
@@ -580,7 +582,7 @@ class Tequila
      */
     public function prettyFormat($value, $indent = '')
     {
-        $next_indent = $indent . '    ';
+        $nextIndent = $indent . self::INDENT;
 
         if (is_array($value))
         {
@@ -588,8 +590,8 @@ class Tequila
             foreach ($value as $key => $entry)
             {
                 $str .=
-                    $next_indent . $this->prettyFormat($key) . ' => ' .
-                    $this->prettyFormat($entry, $next_indent) . ',' . PHP_EOL;
+                    $nextIndent . $this->prettyFormat($key) . ' => ' .
+                    $this->prettyFormat($entry, $nextIndent) . ',' . PHP_EOL;
             }
             return ($str . $indent . ')');
         }
