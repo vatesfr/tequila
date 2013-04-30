@@ -32,13 +32,11 @@
  *
  *   cmdline = cmd [ comment ] regex(/$/)
  *   cmd     = [ whitespaces ] entry whitespaces entry { whitespaces entry } [ whitespaces ]
- *   entry   = boolean | null | naked_str | quoted_str | raw_str | list | variable | subcmd
+ *   entry   = literal | quoted_str | raw_str | list | variable | subcmd
  *   comment = '#' *anything*
  *
  *   whitespaces  = regex(\s+)
- *   boolean      = regex(/true|false/i)
- *   null         = regex(/null/i)
- *   naked_str    = *escaped sequence*
+ *   literal      = regex(/true|false|null/i) | *escaped sequence*
  *   quoted_str   = '"' *escaped sequence* '"'
  *   raw_str      = '%' start_delim characters end_delim
  *   list         = '@(' [ whitespaces ] [ entry { whitespaces entry } [ whitespaces ] ] ')'
@@ -46,8 +44,6 @@
  *   subcmd       = '$(' cmd ')'
  *
  * @author Julien Fontanet <julien.fontanet@isonoe.net>
- *
- * @todo Handle Unicode alphanumerics in naked strings.
  */
 final class Tequila_Parser
 {
@@ -152,15 +148,10 @@ final class Tequila_Parser
 		return new Tequila_Parser_Command($class, $method, $args);
 	}
 
-	/**
-	 * Note: see _boolean().
-	 */
 	private function _entry(&$val)
 	{
 		return (
-			$this->_null($val)
-			|| $this->_boolean($val)
-			|| $this->_nakedStr($val)
+			$this->_literal($val)
 			|| $this->_quotedStr($val)
 			|| $this->_rawStr($val)
 			|| $this->_list($val)
@@ -179,38 +170,21 @@ final class Tequila_Parser
 		return $this->_regex('/\\s+/');
 	}
 
-	/**
-	 * Note: Due to implementation it is not possible to return the “false”
-	 * value. Therefore the return value indicates whether the rule matches and
-	 * the value is stored in the “$val” argument.
-	 */
-	private function _boolean(&$val)
+	private function _literal(&$val)
 	{
-		if (!$this->_regex('/(?:true|false)(?=\s+|$)/i', $match))
+		static $keywords = array(
+			'false' => false,
+			'null'  => null,
+			'true'  => true,
+		);
+
+		if ($this->_regex('#(?:[[:alnum:]-_./]+|(?:\\\\.))+#u', $match))
 		{
-			return false;
-		}
+			$match = $match[0];
 
-		$val = (strcasecmp($match[0], 'true') === 0);
-		return true;
-	}
-
-	private function _null(&$val)
-	{
-		if (!$this->_regex('/null(?=\s+|$)/i'))
-		{
-			return false;
-		}
-
-		$val = null;
-		return true;
-	}
-
-	private function _nakedStr(&$val)
-	{
-		if ($this->_regex('#(?:[a-zA-Z0-9-_./]+|(?:\\\\.))+#', $match))
-		{
-			$val = $this->_parseString($match[0], ' ');
+			$val = array_key_exists(strtolower($match), $keywords)
+				? $keywords[$match]
+				: $this->_parseString($match, ' ');
 			return true;
 		}
 
