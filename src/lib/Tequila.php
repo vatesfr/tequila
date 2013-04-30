@@ -77,6 +77,16 @@ class Tequila
     }
 
     /**
+     * Magic method automatically invoked by PHP when reading a
+     * property.
+     *
+     * @param string $name The name of the property.
+     *
+     * @throws Tequila_Exception If the property does not exist or is
+     *                           not readable.
+     *
+     * @return mixed The value of the property.
+     *
      * @todo Unit tests.
      */
     public function __get($name)
@@ -102,6 +112,18 @@ class Tequila
         );
     }
 
+    /**
+     * Magic method automatically invoked by PHP when setting a
+     * property.
+     *
+     * @param string $name  The name of the property.
+     * @param mixed  $value The new value of the property.
+     *
+     * @throws Tequila_Exception If the property does not exist or is
+     *     not writable, or if the value is invalid for this property.
+     *
+     * @todo Unit tests.
+     */
     public function __set($name, $value)
     {
         static $classes = array(
@@ -334,7 +356,18 @@ class Tequila
     }
 
     /**
-     * @todo Write documentation.
+     * Evaluates a node of the syntax tree.
+     *
+     * The node can be either a value (scalar), a list (array), a
+     * variable (Tequila_Parser_Variable object) or a command
+     * (Tequila_Parser_Command object).
+     *
+     * Evalutation means that variables will be replaced by their
+     * value and commands will be replaced by their result.
+     *
+     * @param mixed $node
+     *
+     * @return mixed The result of the evaluation.
      */
     public function evaluate($node)
     {
@@ -363,14 +396,20 @@ class Tequila
             return null;
         }
 
-        if ($node instanceof Tequila_Parser_Command)
+        if (!($node instanceof Tequila_Parser_Command))
         {
-            $class = $this->evaluate($node->class);
-            $method = $this->evaluate($node->method);
-            $args = $this->evaluate($node->args);
-
-            return $this->execute($class, $method, $args);
+            // This should not happen and denote a programming error.
+            trigger_error(
+                'invalid node type: '.gettype($node),
+                E_USER_ERROR
+            );
         }
+
+        $class = $this->evaluate($node->class);
+        $method = $this->evaluate($node->method);
+        $args = $this->evaluate($node->args);
+
+        return $this->execute($class, $method, $args);
     }
 
     /**
@@ -514,7 +553,19 @@ class Tequila
     }
 
     /**
-     * @todo Write documentation
+     * Sets a Tequila options.
+     *
+     * Tequila options are used to tweak the shell behaviour.
+     *
+     * Currently, the following options are available:
+     * - include-dirs: a list of directories in which to look for
+     *   modules;
+     * - log-file: the file where to store the log;
+     * - quote-strings: a truth value indicating whether a single
+     *   string result should be quoted.
+     *
+     * @param string $name  The name of the option.
+     * @param mixed  $value The new value of the option.
      */
     public function setOption($name, $value)
     {
@@ -559,7 +610,10 @@ class Tequila
     }
 
     /**
-     * @todo Write documentation.
+     * Defines the value of a Tequila variable.
+     *
+     * @param string $name The name of the variable.
+     * @param mixed  $value The new value of the variable.
      */
     public function setVariable($name, $value)
     {
@@ -576,9 +630,11 @@ class Tequila
     /**
      * Format the given value to a nice, easily readable format.
      *
-     * @param string $indent
+     * @param string $indent The current indentation level (should be
+     *                       left empty and used only by this function
+     *                       itself).
      *
-     * @return string
+     * @return string A user-friendly string representing the value.
      */
     public function prettyFormat($value, $indent = '')
     {

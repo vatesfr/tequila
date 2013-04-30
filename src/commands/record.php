@@ -36,7 +36,8 @@ final class _record_start_writer extends Tequila_Writer
 }
 
 /**
- *
+ * This writer forwards messages to another writer but with “#”
+ * prepended at each lines.
  */
 final class _record_play_writer extends Tequila_Writer
 {
@@ -177,12 +178,12 @@ final class record extends Tequila_Module
                 }
             }
 
-            if ($result = rtrim($result, PHP_EOL))
+            if ( ($result = rtrim($result, PHP_EOL)) )
             {
-                $result = preg_replace('/^/m', '# ', $result) . PHP_EOL; // ???
+                // Prepends “#” to every result lines.
+                $result = preg_replace('/^/m', '# ', $result) . PHP_EOL;
             }
 
-            // @todo even if it is only a comment, records it.
             fwrite($handle, $command . PHP_EOL . $result . PHP_EOL);
         }
 
