@@ -5,52 +5,11 @@
  */
 
 /**
+ * This class contains various useful commands/methods for the Tequila
+ * Shell.
  *
- */
-final class _redirect_writer extends Tequila_Writer
-{
-	public function __construct($out_hdl, $err_hdl)
-	{
-		$this->_outHdl = $out_hdl;
-		$this->_errHdl = $err_hdl;
-	}
-
-	public function write($string, $error)
-	{
-		fwrite(
-			$error ? $this->_outHdl : $this->_errHdl,
-			$string
-		);
-	}
-
-	private $_outHdl;
-
-	private $_errHdl;
-}
-
-/**
- *
- */
-final class _redirect_reader extends Tequila_Reader
-{
-	public function __construct($in_hdl)
-	{
-		$this->_inHdl = $in_hdl;
-	}
-
-	public function read(Tequila $tequila, $prompt)
-	{
-		return fgets($this->_inHdl);
-	}
-
-	private $_inHdl;
-}
-
-/**
- * This class contains various useful commands/methods for the Tequila Shell.
- *
- * It can  be used  as a demonstration  and a  reference of the  flexibility and
- * abilities of Tequila.
+ * It can be used as a demonstration and a reference of the
+ * flexibility and abilities of Tequila.
  */
 final class redirect extends Tequila_Module
 {
@@ -75,7 +34,7 @@ final class redirect extends Tequila_Module
 			throw new Exception('File could not be opened: '.$file);
 		}
 
-		$this->_tequila->writer = new _redirect_writer($handle, $handle);
+		$this->_tequila->writer = new Tequila_Writer_Stream($handle);
 
 		try
 		{
@@ -114,7 +73,7 @@ final class redirect extends Tequila_Module
 			throw new Exception('File could not be opened: '.$file);
 		}
 
-		$this->_tequila->reader = new _redirect_reader($handle);
+		$this->_tequila->reader = new Tequila_Reader_Stream($handle);
 
 		try
 		{

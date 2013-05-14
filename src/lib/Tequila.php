@@ -6,7 +6,7 @@
  * @author Julien Fontanet <julien.fontanet@isonoe.net>
  *
  * @property Tequila_ClassLoader $classLoader
- * @property Tequila_Logger      $logger
+ * @property Tequila_Writer      $logger
  * @property Tequila_Reader      $reader
  * @property Tequila_Writer      $writer
  *
@@ -17,7 +17,10 @@
  */
 class Tequila
 {
-
+    /**
+     * String used to indent nested items when displaying complex
+     * values such as arrays.
+     */
     const INDENT = '    ';
 
     // If we want to set these properties private, we should use the “__get” and
@@ -25,10 +28,38 @@ class Tequila
     public $prompt;
     public $variables = array();
 
+    /**
+     * Initializes a new Tequila object.
+     *
+     * @param Tequila_ClassLoader $class_loader The loader used to
+     *     load modules (classes). Default is a null loader which
+     *     always fails.
+     * @param Tequila_Reader $reader The reader used for this shell
+     *     instance. Default is a stream reader using the standard
+     *     input.
+     * @param Tequila_Writer $writer The writer used for this shell
+     *     instance. Default is a stream reader using the standard
+     *     output for non-error messages and using the standard
+     *     error output for error messages.
+     */
     public function __construct(
-    Tequila_ClassLoader $class_loader = null, Tequila_Logger $logger = null, Tequila_Reader $reader = null, Tequila_Writer $writer = null
+    Tequila_ClassLoader $class_loader = null,
+    Tequila_Reader $reader = null,
+    Tequila_Writer $writer = null
     )
     {
+        $this->classLoader = ($class_loader)
+            ? $class_loader
+            : new Tequila_ClassLoader_Void;
+
+        $this->reader = ($reader)
+            ? $reader
+            : new Tequila_Reader_Stream(STDIN);
+
+        $this->_writer = ($writer)
+            ? $writer
+            : new Tequila_Writer_Stream(STDOUT, STDERR);
+
         $this->_user = getenv('SUDO_USER');
         if ($this->_user === false)
         {
@@ -36,42 +67,6 @@ class Tequila
             $this->_user = $user_info['name'];
         }
         $this->prompt = $this->_user . '> ';
-
-        if ($class_loader !== null)
-        {
-            $this->classLoader = $class_loader;
-        }
-        else
-        {
-            $this->classLoader = new Tequila_ClassLoader_Void;
-        }
-
-        if ($logger !== null)
-        {
-            $this->logger = $logger;
-        }
-        else
-        {
-            $this->logger = new Tequila_Logger_Void;
-        }
-
-        if ($reader !== null)
-        {
-            $this->reader = $reader;
-        }
-        else
-        {
-            $this->reader = Tequila_Reader::factory();
-        }
-
-        if ($writer !== null)
-        {
-            $this->writer = $writer;
-        }
-        else
-        {
-            $this->writer = new Tequila_Writer_Plain;
-        }
 
         $this->_parser = new Tequila_Parser;
     }
@@ -93,14 +88,19 @@ class Tequila
     {
         switch ($name)
         {
+            // Compatibility
             case 'class_loader':
-                return $this->classLoader; // Compatibility.
+                return $this->classLoader;
             case 'is_running':
-                return $this->isRunning; // Compatibility
+                return $this->isRunning;
+            case 'logger':
+                return isset($this->_writer['_logger_'])
+                    ? $this->_writer['_logger_']
+                    : null;
+
             case 'classLoader':
             case 'history':
             case 'isRunning':
-            case 'logger':
             case 'reader':
             case 'user':
             case 'writer':
@@ -126,42 +126,59 @@ class Tequila
      */
     public function __set($name, $value)
     {
-        static $classes = array(
-        'classLoader' => 'Tequila_ClassLoader',
-        'logger' => 'Tequila_Logger',
-        'reader' => 'Tequila_Reader',
-        'writer' => 'Tequila_Writer',
-        );
-
-        if ($name === 'class_loader')
+        if ('logger' === $name)
         {
-            $name = 'classLoader'; // Compatibility.
+            if ($this->_writer instanceof Tequila_Writer_Aggregate)
+            {
+                $this->_writer['_logger_'] = $value;
+            }
+            else
+            {
+                $this->_writer = new Tequila_Writer_Aggregate(array(
+                    '_default_' => $this->_writer,
+                    '_logger_'  => $value,
+                ));
+            }
         }
-
-        switch ($name)
+        elseif ('writer' === $name)
         {
-            case 'classLoader':
-            case 'logger':
-            case 'reader':
-            case 'writer':
-                // Only certain variables support type checking..
-                assert(isset($classes[$name]));
-
-                $class = $classes[$name];
-                if (!($value instanceof $class))
-                {
-                    throw new Tequila_Exception(
-                        __CLASS__ . '::' . $name . ' must be an instance of ' . $class
-                    );
-                }
-
-                $name = '_' . $name;
-                $this->$name = $value;
-                break;
-            default:
+            if ( !($value instanceof Tequila_Writer) )
+            {
                 throw new Tequila_Exception(
-                    'Setting incorrect property: ' . __CLASS__ . '::' . $name
+                    __CLASS__ . '::' . $name . ' must be an instance of Tequila_Writer'
                 );
+            }
+
+            $this->_writer = $value;
+        }
+        elseif (('classLoader' === $name)
+            || ('class_loader' === $name)) // Compatibility.
+        {
+            if ( !($value instanceof Tequila_ClassLoader) )
+            {
+                throw new Tequila_Exception(
+                    __CLASS__ . '::' . $name . ' must be an instance of Tequila_ClassLoader'
+                );
+            }
+
+            $this->_classLoader = $value;
+        }
+        elseif ('reader' === $name)
+        {
+            if ( !($value instanceof Tequila_Reader) )
+            {
+                throw new Tequila_Exception(
+                    __CLASS__ . '::' . $name . ' must be an instance of Tequila_Reader'
+                );
+            }
+
+            $this->_reader = $value;
+        }
+        else
+        {
+            throw new Tequila_Exception(
+                'Setting incorrect property: ' . __CLASS__ . '::' . $name
+            );
         }
     }
 
@@ -193,10 +210,6 @@ class Tequila
 
                 return;
             }
-
-            // To make the  log as close as possible as  the user screen, writes
-            // the given data.
-            $this->_logger->log($string, Tequila_Logger::NOTICE);
 
             try
             {
@@ -279,7 +292,7 @@ class Tequila
     {
         if (class_exists($class_name, false))
         {
-            if (!isset($this->_loaded_classes[$class_name]))
+            if (!isset($this->_loadedClasses[$class_name]))
             {
                 // We did not load this class, denies this access.
                 throw new Tequila_NoSuchClass($class_name);
@@ -288,7 +301,7 @@ class Tequila
         elseif ($this->_classLoader->load($class_name) &&
             class_exists($class_name, false))
         {
-            $this->_loaded_classes[$class_name] = true;
+            $this->_loadedClasses[$class_name] = true;
         }
         else
         {
@@ -477,11 +490,38 @@ class Tequila
         return $this->_parser->parse($command);
     }
 
+    /**
+     * Asks something to the user (i.e. prints a question and reads an
+     * answer).
+     *
+     * @param string $prompt The question.
+     *
+     * @return string|false The string read or false if an error occured.
+     */
     public function prompt($prompt)
     {
-        return $this->_reader->read($this, $prompt);
+        $value = $this->_reader->read($this, $prompt);
+
+        // To make the  log as close as possible as  the user screen, writes
+        // the given data.
+        if ( ($logger = $this->logger) )
+        {
+            $logger->write($value, false);
+        }
+
+        return $value;
     }
 
+    /**
+     * Asks something to the user until he gives a legal answer.
+     *
+     * @param string  $prompt          The question.
+     * @param array   $legalValues     The list of legal answers.
+     * @param boolean $caseInsensitive Whether the case of the answer
+     *     does not matter.
+     *
+     * @return string|false The string read or false if an error occured.
+     */
     public function promptSecure($prompt, array $legalValues, $caseInsensitive = false)
     {
         if ($caseInsensitive)
@@ -514,10 +554,6 @@ class Tequila
     public function write($string, $error = false)
     {
         $this->_writer->write($string, $error);
-
-        $this->_logger->log(
-            $string, $error ? Tequila_Logger::WARNING : Tequila_Logger::NOTICE
-        );
     }
 
     /**
@@ -597,7 +633,18 @@ class Tequila
                 $this->_classLoader->addDirectory($value);
                 break;
             case 'log-file':
-                $this->_logger = new Tequila_Logger_File($value);
+                $handle = fopen($value, 'a');
+                if (!$handle)
+                {
+                    throw new Exception('failed to open '.$value);
+                }
+                $logger = new Tequila_Writer_Stream($handle);
+                $logger->write(
+                    PHP_EOL.'[New session for '.$this->user.'] '.
+                    date('c').PHP_EOL.PHP_EOL,
+                    false
+                );
+                $this->logger = $logger;
                 break;
             case 'quote-strings':
                 is_string($value)
@@ -685,14 +732,24 @@ class Tequila
         $_classLoader,
         $_history = array(),
         $_isRunning = false,
-        $_loaded_classes = array(), // Used for security purposes.
-        $_logger,
+        $_loadedClasses = array(), // Used for security purposes.
         $_parser,
         $_quoteStrings = true,
         $_reader,
         $_user,
         $_writer;
 
+    /**
+     * Helper function for the configuration parsing which returns
+     * values for variables.
+     *
+     * If the variable is “user”, it returns the name of the current
+     * user. Else if the variable exists in the environment its value
+     * is returned.
+     *
+     * @param  array  $matches
+     * @return string
+     */
     private function _getConfigVariables(array $matches)
     {
         switch ($matches[1])

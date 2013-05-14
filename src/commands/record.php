@@ -5,37 +5,6 @@
  */
 
 /**
- * This specific Tequila_Writer is needed to capture commands results.
- */
-final class _record_start_writer extends Tequila_Writer
-{
-
-    public function __construct(Tequila_Writer $writer)
-    {
-        $this->_writer = $writer;
-    }
-
-    public function write($string, $error)
-    {
-        $this->_output .= $string;
-        $this->_writer->write($string, $error);
-    }
-
-    public function pop()
-    {
-        $output = $this->_output;
-
-        $this->_output = '';
-
-        return $output;
-    }
-
-    private $_output = '';
-    private $_writer;
-
-}
-
-/**
  * This writer forwards messages to another writer but with “#”
  * prepended at each lines.
  */
@@ -127,9 +96,12 @@ final class record extends Tequila_Module
         }
 
         $originalWriter = $this->_tequila->writer;
-        $recordWriter = new _record_start_writer($originalWriter);
+        $recordWriter = new Tequila_Witer_Memory;
 
-        $this->_tequila->writer = $recordWriter;
+        $this->_tequila->writer = new Tequila_Writer_Aggregate(array(
+            $recordWriter,
+            $originalWriter,
+        ));
 
         for (;;)
         {

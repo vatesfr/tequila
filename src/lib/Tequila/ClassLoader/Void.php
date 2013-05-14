@@ -7,7 +7,7 @@
  *
  * @author Julien Fontanet <julien.fontanet@isonoe.net>
  *
- * @codeCoverageIgnore
+ * @codeCoverageIgnore Trivial code.
  */
 class Tequila_ClassLoader_Void extends Tequila_ClassLoader
 {

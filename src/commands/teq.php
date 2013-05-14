@@ -56,7 +56,7 @@ final class teq extends Tequila_Module
             if ($parameter->isOptional())
             {
                 $value = $parameter->getDefaultValue();
-                $this->_tequila->write(' (' . var_export($value, true) . ')');
+                $this->_tequila->write(' = ' . $this->_tequila->prettyFormat($value, '  '));
             }
             $this->_tequila->writeln();
         }

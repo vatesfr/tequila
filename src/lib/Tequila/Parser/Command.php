@@ -2,6 +2,8 @@
 
 /**
  * This class is used to store nested commands.
+ *
+ * @codeCoverageIgnore Trivial code.
  */
 final class Tequila_Parser_Command extends Tequila_Parser_Node
 {
